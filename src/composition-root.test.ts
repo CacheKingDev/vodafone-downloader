@@ -57,4 +57,25 @@ describe("createApplication", () => {
     await application.shutdown();
     await expect(application.shutdown()).resolves.toBeUndefined();
   });
+
+  it("closes the database even when app.close() throws", async () => {
+    application = await createApplication({
+      CONFIG_DIR: dir,
+      DOWNLOADS_DIR: join(dir, "downloads"),
+      LOG_LEVEL: "silent",
+      NODE_ENV: "test",
+    });
+
+    // The hook must be async: avvio (Fastify's boot/close engine) only turns
+    // a rejected promise into a close() rejection — a synchronous throw from
+    // a zero-arg onClose hook escapes as an uncaught exception instead, so a
+    // plain `() => { throw ... }` would not exercise the code path we want.
+    const closeFailure = new Error("server teardown failed");
+    application.app.addHook("onClose", async () => {
+      throw closeFailure;
+    });
+
+    await expect(application.shutdown()).rejects.toThrow(closeFailure);
+    expect(application.db.$client.open).toBe(false);
+  });
 });

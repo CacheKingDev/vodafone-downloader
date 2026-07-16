@@ -920,12 +920,17 @@ const REDACTED_PATHS = [
   'code_verifier',
   'authorization',
   'cookie',
+  // Pino wildcards match exactly one level deep. Every field above needs its
+  // own '*.' twin, or `log.info({ oauth: { code_verifier } })` leaks in clear.
   '*.password',
   '*.username',
   '*.token',
   '*.access_token',
   '*.id_token',
   '*.refresh_token',
+  '*.code_verifier',
+  '*.authorization',
+  '*.cookie',
   'req.headers.authorization',
   'req.headers.cookie',
   'res.headers["set-cookie"]',

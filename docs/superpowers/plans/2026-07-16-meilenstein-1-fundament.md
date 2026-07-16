@@ -313,13 +313,30 @@ export class PersistenceError extends AppError {
 Run: `npx vitest run src/domain/errors.test.ts`
 Erwartet: PASS — 4 Tests
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Sanity-Test aus Task 1 löschen**
+
+```bash
+rm src/sanity.test.ts
+```
+
+Er hat seinen Zweck erfüllt: In Task 1 war er der Nachweis, dass Vitest und
+TypeScript zusammenspielen. Ab hier belegen echte Tests dasselbe, und ein Test,
+der `1 + 1` prüft, ist ab jetzt nur noch Rauschen.
+
+- [ ] **Step 6: Gesamte Suite ausführen**
+
+Run: `npx vitest run`
+Erwartet: PASS — 4 Tests aus `errors.test.ts`, keine Meldung über fehlende Testdateien
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/domain/errors.ts src/domain/errors.test.ts
+git rm --cached src/sanity.test.ts
 git commit -m "feat: Fehlerbasisklassen der Domäne
 
 AppError mit stabilem code als Verzweigungspunkt; message bleibt frei.
+Der Sanity-Test entfällt, da echte Tests die Toolchain nun belegen.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```

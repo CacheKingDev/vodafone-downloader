@@ -77,9 +77,9 @@
     "@fastify/formbody": "^8.0.2",
     "@fastify/helmet": "^13.0.1",
     "@fastify/rate-limit": "^10.2.2",
-    "@fastify/static": "^8.0.4",
-    "better-sqlite3": "^11.8.1",
-    "drizzle-orm": "^0.38.4",
+    "@fastify/static": "^10.1.0",
+    "better-sqlite3": "^12.11.1",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.2.1",
     "pino": "^9.6.0",
     "zod": "^4.0.5"
@@ -88,7 +88,7 @@
     "@biomejs/biome": "^2.0.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^24.0.0",
-    "drizzle-kit": "^0.30.2",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
   }
@@ -991,6 +991,13 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: nichts
 - Produces: Drizzle-Tabellen `account`, `invoice`, `invoiceDocument`, `run`, `adminSession`, `setting` — exakt nach Spec Abschnitt 5.
+
+**Hinweis zur Drizzle-Version:** Das Projekt nutzt `drizzle-orm` ^0.45.2 (angehoben
+gegenüber der ursprünglichen Planannahme wegen einer SQL-Injection-Schwachstelle in
+0.38.x). Die unten gezeigte Array-Syntax für Indizes — `(table) => [uniqueIndex(...)]` —
+ist die ab 0.36 empfohlene Form. Sollte die installierte Version eine abweichende API
+verlangen, gilt die installierte Version: Struktur und Constraints des Schemas sind
+bindend, die exakte Schreibweise nicht. Abweichungen im Report dokumentieren.
 
 - [ ] **Step 1: Schema schreiben**
 

@@ -25,6 +25,9 @@ const REDACTED_PATHS = [
   "*.access_token",
   "*.id_token",
   "*.refresh_token",
+  "*.code_verifier",
+  "*.authorization",
+  "*.cookie",
   "req.headers.authorization",
   "req.headers.cookie",
   'res.headers["set-cookie"]',
@@ -37,6 +40,13 @@ export interface LoggerOptions {
 }
 
 export function createLogger(options: LoggerOptions): Logger {
+  if (options.pretty && options.destination !== undefined) {
+    throw new Error(
+      "createLogger: 'pretty' and 'destination' cannot be combined — pino replaces the " +
+        "destination stream with the pino-pretty transport internally, silently ignoring it",
+    );
+  }
+
   const config: pino.LoggerOptions = {
     level: options.level,
     redact: { paths: REDACTED_PATHS, censor: "[redacted]" },

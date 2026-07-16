@@ -76,4 +76,41 @@ describe("createLogger", () => {
     const line = captureLine((log) => log.info({ invoiceNumber: "123456789012" }, "invoice"));
     expect(line.invoiceNumber).toBe("123456789012");
   });
+
+  it("redacts a nested code_verifier", () => {
+    const line = captureLine((log) =>
+      log.info({ oauth: { code_verifier: "verifier-secret" } }, "oauth"),
+    );
+    const oauth = line.oauth as Record<string, unknown>;
+    expect(oauth.code_verifier).toBe("[redacted]");
+    expect(JSON.stringify(line)).not.toContain("verifier-secret");
+  });
+
+  it("redacts a nested authorization field", () => {
+    const line = captureLine((log) =>
+      log.info({ oauth: { authorization: "Bearer xyz" } }, "oauth"),
+    );
+    const oauth = line.oauth as Record<string, unknown>;
+    expect(oauth.authorization).toBe("[redacted]");
+    expect(JSON.stringify(line)).not.toContain("Bearer xyz");
+  });
+
+  it("redacts a nested cookie field", () => {
+    const line = captureLine((log) =>
+      log.info({ session: { cookie: "sid=secret-cookie" } }, "session"),
+    );
+    const session = line.session as Record<string, unknown>;
+    expect(session.cookie).toBe("[redacted]");
+    expect(JSON.stringify(line)).not.toContain("secret-cookie");
+  });
+
+  it("throws when pretty and destination are combined", () => {
+    expect(() =>
+      createLogger({
+        level: "info",
+        pretty: true,
+        destination: { write: () => undefined },
+      }),
+    ).toThrow(/pretty.*destination|destination.*pretty/i);
+  });
 });

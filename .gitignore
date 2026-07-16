@@ -16,6 +16,10 @@ test-results/
 playwright-report/
 artifacts/
 
+# Superpowers-Arbeitsdateien (Ledger, Briefings, Review-Pakete)
+.superpowers/
+.local/
+
 .env
 .env.*
 !.env.example

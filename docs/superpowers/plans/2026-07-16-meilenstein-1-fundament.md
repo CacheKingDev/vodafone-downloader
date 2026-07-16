@@ -1788,8 +1788,13 @@ export async function createApplication(env: NodeJS.ProcessEnv = process.env): P
   const shutdown = async (): Promise<void> => {
     if (closed) return;
     closed = true;
-    await app.close();
-    closeDatabase(db);
+    try {
+      await app.close();
+    } finally {
+      // The database must close even if server teardown fails, or the SQLite
+      // handle leaks: `closed` is already set, so no retry will ever reach it.
+      closeDatabase(db);
+    }
   };
 
   return { app, config, logger, cipher, db, shutdown };

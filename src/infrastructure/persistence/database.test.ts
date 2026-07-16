@@ -65,6 +65,10 @@ describe("createDatabase", () => {
       })
       .run();
 
+    // Precondition: without this, the test would also pass if the insert
+    // never happened — it must fail for the right reason.
+    expect(db.select().from(invoice).all()).toHaveLength(1);
+
     db.delete(account).run();
     expect(db.select().from(invoice).all()).toEqual([]);
   });
@@ -149,6 +153,10 @@ describe("createDatabase", () => {
         remoteDocumentId: "doc-1",
       })
       .run();
+
+    // Precondition: without this, the test would also pass if the insert
+    // never happened — it must fail for the right reason.
+    expect(db.select().from(invoiceDocument).all()).toHaveLength(1);
 
     db.delete(invoice).run();
     expect(db.select().from(invoiceDocument).all()).toEqual([]);

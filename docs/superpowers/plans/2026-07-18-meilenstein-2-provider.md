@@ -570,7 +570,13 @@ EOF
   - `tokenResponseSchema`, `userinfoSchema`, `invoiceListSchema`, `invoiceDocumentSchema` (Zod)
   - `function parsePortal<T>(schema: ZodType<T>, data: unknown, context: string): T` — wirft `PortalContractError` bei Fehlschlag.
 
-> **Feldnamen:** Die folgenden Schemas beruhen auf Design-Spec §3 (Spike-Mitschnitt). **Erster Schritt der Implementierung: die echte Fixture laden und die Feldnamen abgleichen.** Weicht das Portal ab, Schema *und* Fixture-Erwartung anpassen und die Abweichung im Report dokumentieren. Das ist Teil des TDD-Zyklus, kein Platzhalter.
+> **Feldnamen — gegen echte Captures verifiziert (2026-07-18).** Die Fixtures liegen bereits anonymisiert in `src/infrastructure/vodafone/fixtures/`. Die echte Portal-Struktur wich von der ursprünglichen Annahme ab; die Schemas unten sind entsprechend korrigiert:
+> - `userinfo` ist ein **Array**; die Assets liegen unter `[0].userAssets[]`, jeder mit `id` im Format `urn:vf-de-dxl-tmf:kd:cable:can:<CAN>`. `loginErrorCount` ist ein **String**.
+> - `invoice` ist ein **Objekt** `{ customerId, invoices: [...], totalAmount, _links }` — die Rechnungen liegen unter `.invoices`.
+> - `contractNumber` ist ein **Array von Strings** unter `referencedBillingAccount.productCategory[]`.
+> - Es gibt **kein** `currency`-Feld; der Betrag ist in EUR. `about` ist enum-artig (`"notSpecified"`).
+>
+> Läuft der Test grün gegen die Fixtures, stimmt das Schema. Zusätzliche Felder in den Fixtures ignoriert Zod bewusst (non-strict) — nur modellieren, was der ApiClient braucht.
 
 - [ ] **Step 1: Failing test schreiben**
 
@@ -599,9 +605,10 @@ describe("portal schemas", () => {
     expect(typeof parsed.expires_in).toBe("number");
   });
 
-  it("accepts the real userinfo fixture", () => {
+  it("accepts the real userinfo fixture (an array with userAssets)", () => {
     const parsed = parsePortal(userinfoSchema, fixture("userinfo.json"), "userinfo");
-    expect(Array.isArray(parsed.userAssets)).toBe(true);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(Array.isArray(parsed[0]?.userAssets)).toBe(true);
   });
 
   it("accepts the real invoice fixture", () => {
@@ -654,14 +661,17 @@ export const tokenResponseSchema = z.object({
   scope: z.string().optional(),
 });
 
+// userinfo is an ARRAY; assets live under [0].userAssets. Each asset id is a
+// URN like urn:vf-de-dxl-tmf:kd:cable:can:<CAN>.
 const userAssetSchema = z.object({
   id: z.string().min(1),
 });
 
-export const userinfoSchema = z.object({
+const userinfoEntrySchema = z.object({
   userAssets: z.array(userAssetSchema),
-  loginErrorCount: z.number().int().optional(),
 });
+
+export const userinfoSchema = z.array(userinfoEntrySchema);
 
 const invoiceDocumentMetaSchema = z.object({
   documentId: z.string().min(1),
@@ -669,8 +679,9 @@ const invoiceDocumentMetaSchema = z.object({
   subType: z.string().nullish(),
 });
 
-const contractCategorySchema = z.object({
-  contractNumber: z.string().nullish(),
+// contractNumber is an ARRAY of strings under productCategory[].
+const productCategorySchema = z.object({
+  contractNumber: z.array(z.string()).nullish(),
 });
 
 const invoiceSchema = z.object({
@@ -681,17 +692,17 @@ const invoiceSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullish(),
   amount: z.number(),
-  currency: z.string().optional(),
   about: z.string().nullish(),
   documents: z.array(invoiceDocumentMetaSchema),
   referencedBillingAccount: z
-    .object({ productCategory: z.array(contractCategorySchema).optional() })
+    .object({ productCategory: z.array(productCategorySchema).nullish() })
     .nullish(),
 });
 
-// The portal returns a list of invoices. Adjust the wrapper to match the real
-// fixture (bare array vs. { items: [...] } vs. { invoices: [...] }).
-export const invoiceListSchema = z.array(invoiceSchema);
+// The portal wraps the invoices in an object: { customerId, invoices, ... }.
+export const invoiceListSchema = z.object({
+  invoices: z.array(invoiceSchema),
+});
 
 export const invoiceDocumentSchema = z.object({
   mime: z.string(),
@@ -910,7 +921,7 @@ describe("VodafoneApiClient error mapping", () => {
   });
 
   it("sends the bearer token", async () => {
-    const fetchImpl = vi.fn(async () => jsonResponse(200, { userAssets: [] }));
+    const fetchImpl = vi.fn(async () => jsonResponse(200, [{ userAssets: [] }]));
     await clientWith(fetchImpl).discoverAssets(session);
     const init = fetchImpl.mock.calls[0]?.[1];
     const headers = new Headers(init?.headers);
@@ -975,7 +986,10 @@ export class VodafoneApiClient {
   async discoverAssets(session: AuthSession): Promise<DiscoveredAsset[]> {
     const raw = await this.request(session, "/tmf-api/openid/v4/userinfo");
     const info = parsePortal(userinfoSchema, raw, "userinfo");
-    return info.userAssets.map((asset) => ({ urn: asset.id }));
+    // userinfo is an array; the assets live on the first (only) entry.
+    const first = info[0];
+    if (first === undefined) return [];
+    return first.userAssets.map((asset) => ({ urn: asset.id }));
   }
 
   /** Performs one GET with retries, returns parsed JSON, or throws a mapped error. */
@@ -1164,16 +1178,17 @@ Innerhalb der Klasse ergänzen:
 ```ts
   async listInvoices(session: AuthSession, customerUrn: string): Promise<Invoice[]> {
     const raw = await this.request(session, `/customer/${customerUrn}/invoice`);
-    const list = parsePortal(invoiceListSchema, raw, "invoice");
-    return list.map((portalInvoice) => ({
+    const response = parsePortal(invoiceListSchema, raw, "invoice");
+    return response.invoices.map((portalInvoice) => ({
       number: portalInvoice.number,
       issuedOn: portalInvoice.date,
       dueOn: portalInvoice.dueDate ?? null,
       amountCents: Math.round(portalInvoice.amount * 100),
-      currency: portalInvoice.currency ?? "EUR",
+      // The portal omits a currency field; cable billing is EUR.
+      currency: "EUR",
       subject: portalInvoice.about ?? null,
       contractNumber:
-        portalInvoice.referencedBillingAccount?.productCategory?.[0]?.contractNumber ?? null,
+        portalInvoice.referencedBillingAccount?.productCategory?.[0]?.contractNumber?.[0] ?? null,
       documents: portalInvoice.documents.map((doc) => ({
         documentId: doc.documentId,
         category: doc.category ?? null,
@@ -1250,7 +1265,7 @@ describe("VodafoneApiClient retry policy", () => {
     const fetchImpl = vi.fn(async () => {
       calls += 1;
       if (calls < 3) return jsonResponse(500, {});
-      return jsonResponse(200, { userAssets: [] });
+      return jsonResponse(200, [{ userAssets: [] }]);
     });
     const promise = retryingClient(fetchImpl).discoverAssets(session);
     await vi.runAllTimersAsync();
@@ -1314,7 +1329,7 @@ EOF
   - `interface AuthenticatorOptions { loginUrl: string; tokenUrl: string; authorizeUrl: string; artifactsDir: string; silentRenewalSupported: boolean; logger: Logger; headless?: boolean }`
   - `class VodafoneAuthenticator` mit `fullLogin(credentials): Promise<AuthSession>` und `silentRenewal(existing): Promise<AuthSession>`
 
-> **Silent-Renewal-Stufe:** `silentRenewal` nur mit echter Logik füllen, **wenn das Smoke-Experiment (Task 3) ergab, dass prompt=none trägt.** Andernfalls wirft `silentRenewal` sofort `SessionExpiredError` (die Fassade fällt dann auf `fullLogin` zurück) und `silentRenewalSupported` wird in der Composition auf `false` gesetzt. Kein spekulativer Renewal-Code.
+> **Silent-Renewal-Stufe — bestätigt (2026-07-18).** Das Smoke-Experiment (Task 3) ergab: `prompt=none` mit persistierten Cookies liefert einen frischen Token (`fresh token via prompt=none: true`, kein Login-Formular). Die Kaskade ist damit **3-stufig**; `silentRenewal` wird voll implementiert (Code unten) und `silentRenewalSupported` in der Composition auf `true` gesetzt. Der `!silentRenewalSupported`-Zweig bleibt als sauberer Fallback erhalten, falls das Portal später wechselt.
 
 - [ ] **Step 1: Implementieren (kein Unit-Test — Browser)**
 

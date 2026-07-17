@@ -1,8 +1,8 @@
 {
-  "customerId": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+  "customerId": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
   "invoices": [
     {
-      "number": "100000000001",
+      "number": "900000000007",
       "date": "2026-07-07",
       "amount": 45.41,
       "dueDate": "2026-07-07",
@@ -10,26 +10,26 @@
       "about": "notSpecified",
       "documents": [
         {
-          "documentId": "2000000000",
+          "documentId": "0000000008",
           "category": "invoice",
           "icon": "iconKip",
           "subType": "internetPhone"
         }
       ],
       "referencedBillingAccount": {
-        "id": "urn:vf-de-dxl-tmf:kd:cable:can-subaccount:0000000000-2",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can-subaccount:000000002-2",
         "displayName": "0002",
         "productCategory": [
           {
             "id": "KIP",
-            "name": "KIP",
-            "contractNumber": ["3000000000"]
+            "name": "Max Mustermann",
+            "contractNumber": ["000000009"]
           }
         ]
       }
     },
     {
-      "number": "100000000002",
+      "number": "900000000010",
       "date": "2026-07-07",
       "amount": 0,
       "dueDate": "2026-07-07",
@@ -37,26 +37,26 @@
       "about": "notSpecified",
       "documents": [
         {
-          "documentId": "2000000000",
+          "documentId": "0000000011",
           "category": "invoice",
           "icon": "iconTv",
           "subType": "cableConnection"
         }
       ],
       "referencedBillingAccount": {
-        "id": "urn:vf-de-dxl-tmf:kd:cable:can-subaccount:0000000000-4",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can-subaccount:000000002-4",
         "displayName": "0004",
         "productCategory": [
           {
             "id": "TV",
-            "name": "TV",
-            "contractNumber": ["979533245"]
+            "name": "Max Mustermann",
+            "contractNumber": ["000000012"]
           }
         ]
       }
     },
     {
-      "number": "100000000003",
+      "number": "900000000013",
       "date": "2026-06-08",
       "amount": 44.99,
       "dueDate": "2026-06-08",
@@ -64,20 +64,20 @@
       "about": "notSpecified",
       "documents": [
         {
-          "documentId": "2000000000",
+          "documentId": "0000000014",
           "category": "invoice",
           "icon": "iconKip",
           "subType": "internetPhone"
         }
       ],
       "referencedBillingAccount": {
-        "id": "urn:vf-de-dxl-tmf:kd:cable:can-subaccount:0000000000-2",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can-subaccount:000000002-2",
         "displayName": "0002",
         "productCategory": [
           {
             "id": "KIP",
-            "name": "KIP",
-            "contractNumber": ["3000000000"]
+            "name": "Max Mustermann",
+            "contractNumber": ["000000009"]
           }
         ]
       }
@@ -85,7 +85,7 @@
   ],
   "totalAmount": [
     {
-      "accountId": "0000000000",
+      "accountId": "000000002",
       "amount": [
         {
           "date": "2025-07-01",

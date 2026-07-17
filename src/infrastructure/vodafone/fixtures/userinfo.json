@@ -6,7 +6,7 @@
     "lastLoginDate": "2026-01-01T00:00:00.000Z",
     "externalIdentifier": [
       {
-        "id": "1000000",
+        "id": "0000001",
         "owner": "ulm",
         "type": "userId"
       }
@@ -16,7 +16,7 @@
       "state": "inactive"
     },
     "isPreferredUsernameEmailAddress": false,
-    "sub": "1000000",
+    "sub": "0000001",
     "name": "Max Mustermann",
     "email": "max.mustermann@example.com",
     "email_verified": true,
@@ -27,9 +27,9 @@
     "preferred_username": "MaxMuster",
     "userAssets": [
       {
-        "name": "GigaZuhause CableMax 1000",
+        "name": "Max Mustermann",
         "status": "activated",
-        "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
         "assetType": "Broadband",
         "entityType": "product",
         "role": "owner",
@@ -41,12 +41,12 @@
         ],
         "externalIdentifier": [
           {
-            "id": "0000000000",
+            "id": "000000002",
             "owner": "vkd",
             "type": "customerNumber"
           },
           {
-            "id": "31941406",
+            "id": "00000003",
             "owner": "ulm",
             "type": "subscriptionId"
           }
@@ -61,62 +61,62 @@
             "status": "activated",
             "externalIdentifier": [
               {
-                "id": "0000000000",
+                "id": "000000002",
                 "owner": "vkd",
                 "type": "accountNumber"
               },
               {
-                "id": "1556141",
+                "id": "0000004",
                 "owner": "ulm",
                 "type": "accountId"
               }
             ],
             "characteristic": [
               {
-                "name": "stack",
+                "name": "Max Mustermann",
                 "value": "Cable"
               },
               {
-                "name": "hasCableMail",
+                "name": "Max Mustermann",
                 "value": "true"
               },
               {
-                "name": "isDefault",
+                "name": "Max Mustermann",
                 "value": "true"
               },
               {
-                "name": "isSelected",
+                "name": "Max Mustermann",
                 "value": "true"
               }
             ],
-            "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
             "assetType": "Broadband",
             "entityType": "billingAccount"
           }
         ],
         "characteristic": [
           {
-            "name": "footPrint",
+            "name": "Max Mustermann",
             "value": "vkd"
           },
           {
-            "name": "stack",
+            "name": "Max Mustermann",
             "value": "Cable"
           },
           {
-            "name": "subType",
+            "name": "Max Mustermann",
             "value": "KIP"
           },
           {
-            "name": "icon",
+            "name": "Max Mustermann",
             "value": "Internet"
           }
         ]
       },
       {
-        "name": "Vodafone CableMax 1000",
+        "name": "Max Mustermann",
         "status": "deactivated",
-        "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
         "assetType": "Broadband",
         "entityType": "product",
         "role": "owner",
@@ -128,12 +128,12 @@
         ],
         "externalIdentifier": [
           {
-            "id": "0000000000",
+            "id": "000000002",
             "owner": "vkd",
             "type": "customerNumber"
           },
           {
-            "id": "31930341",
+            "id": "00000005",
             "owner": "ulm",
             "type": "subscriptionId"
           }
@@ -148,62 +148,62 @@
             "status": "activated",
             "externalIdentifier": [
               {
-                "id": "0000000000",
+                "id": "000000002",
                 "owner": "vkd",
                 "type": "accountNumber"
               },
               {
-                "id": "1556141",
+                "id": "0000004",
                 "owner": "ulm",
                 "type": "accountId"
               }
             ],
             "characteristic": [
               {
-                "name": "stack",
+                "name": "Max Mustermann",
                 "value": "Cable"
               },
               {
-                "name": "hasCableMail",
+                "name": "Max Mustermann",
                 "value": "true"
               },
               {
-                "name": "isDefault",
+                "name": "Max Mustermann",
                 "value": "true"
               },
               {
-                "name": "isSelected",
+                "name": "Max Mustermann",
                 "value": "true"
               }
             ],
-            "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
             "assetType": "Broadband",
             "entityType": "billingAccount"
           }
         ],
         "characteristic": [
           {
-            "name": "footPrint",
+            "name": "Max Mustermann",
             "value": "vkd"
           },
           {
-            "name": "stack",
+            "name": "Max Mustermann",
             "value": "Cable"
           },
           {
-            "name": "subType",
+            "name": "Max Mustermann",
             "value": "KIP"
           },
           {
-            "name": "icon",
+            "name": "Max Mustermann",
             "value": "Internet"
           }
         ]
       },
       {
-        "name": "Vodafone TV Connect Zuhause",
+        "name": "Max Mustermann",
         "status": "activated",
-        "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
         "assetType": "TV",
         "entityType": "product",
         "role": "owner",
@@ -215,12 +215,12 @@
         ],
         "externalIdentifier": [
           {
-            "id": "0000000000",
+            "id": "000000002",
             "owner": "vkd",
             "type": "customerNumber"
           },
           {
-            "id": "31941407",
+            "id": "00000006",
             "owner": "ulm",
             "type": "subscriptionId"
           }
@@ -235,54 +235,54 @@
             "status": "activated",
             "externalIdentifier": [
               {
-                "id": "0000000000",
+                "id": "000000002",
                 "owner": "vkd",
                 "type": "accountNumber"
               },
               {
-                "id": "1556141",
+                "id": "0000004",
                 "owner": "ulm",
                 "type": "accountId"
               }
             ],
             "characteristic": [
               {
-                "name": "stack",
+                "name": "Max Mustermann",
                 "value": "Cable"
               },
               {
-                "name": "hasCableMail",
+                "name": "Max Mustermann",
                 "value": "true"
               },
               {
-                "name": "isDefault",
+                "name": "Max Mustermann",
                 "value": "true"
               },
               {
-                "name": "isSelected",
+                "name": "Max Mustermann",
                 "value": "true"
               }
             ],
-            "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
             "assetType": "Broadband",
             "entityType": "billingAccount"
           }
         ],
         "characteristic": [
           {
-            "name": "footPrint",
+            "name": "Max Mustermann",
             "value": "vkd"
           },
           {
-            "name": "stack",
+            "name": "Max Mustermann",
             "value": "Cable"
           },
           {
-            "name": "subType",
+            "name": "Max Mustermann",
             "value": "TV"
           },
           {
-            "name": "icon",
+            "name": "Max Mustermann",
             "value": "TV"
           }
         ]

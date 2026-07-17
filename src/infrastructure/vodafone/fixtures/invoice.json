@@ -23,9 +23,7 @@
           {
             "id": "KIP",
             "name": "KIP",
-            "contractNumber": [
-              "3000000000"
-            ]
+            "contractNumber": ["3000000000"]
           }
         ]
       }
@@ -52,9 +50,7 @@
           {
             "id": "TV",
             "name": "TV",
-            "contractNumber": [
-              "979533245"
-            ]
+            "contractNumber": ["979533245"]
           }
         ]
       }
@@ -81,9 +77,7 @@
           {
             "id": "KIP",
             "name": "KIP",
-            "contractNumber": [
-              "3000000000"
-            ]
+            "contractNumber": ["3000000000"]
           }
         ]
       }

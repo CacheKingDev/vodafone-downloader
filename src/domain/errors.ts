@@ -25,3 +25,31 @@ export class CryptoError extends AppError {
 export class PersistenceError extends AppError {
   readonly code = "PERSISTENCE";
 }
+
+/**
+ * The portal rejected the credentials. NEVER retried: the portal counts failed
+ * attempts server-side (userinfo.loginErrorCount) and will lock the account.
+ */
+export class AuthenticationFailedError extends AppError {
+  readonly code = "AUTH_FAILED";
+}
+
+/** The access token is expired or was rejected (HTTP 401). Triggers re-auth. */
+export class SessionExpiredError extends AppError {
+  readonly code = "SESSION_EXPIRED";
+}
+
+/** A portal response failed schema validation — the portal has changed. Not retried. */
+export class PortalContractError extends AppError {
+  readonly code = "PORTAL_CONTRACT";
+}
+
+/** A transient network fault (timeout, 5xx, connection reset). Retryable with backoff. */
+export class TransientNetworkError extends AppError {
+  readonly code = "NETWORK";
+}
+
+/** The portal returned HTTP 429. Back off and abandon the run rather than push. */
+export class RateLimitedError extends AppError {
+  readonly code = "RATE_LIMITED";
+}

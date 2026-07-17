@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { AppError, ConfigError, CryptoError, PersistenceError } from "./errors.js";
+import {
+  AppError,
+  AuthenticationFailedError,
+  ConfigError,
+  CryptoError,
+  PersistenceError,
+  PortalContractError,
+  RateLimitedError,
+  SessionExpiredError,
+  TransientNetworkError,
+} from "./errors.js";
 
 describe("AppError", () => {
   it("exposes a stable code per subclass", () => {
@@ -21,5 +31,28 @@ describe("AppError", () => {
   it("preserves the cause", () => {
     const cause = new Error("root");
     expect(new ConfigError("boom", { cause }).cause).toBe(cause);
+  });
+});
+
+describe("provider errors", () => {
+  it("exposes a stable code per subclass", () => {
+    expect(new AuthenticationFailedError("x").code).toBe("AUTH_FAILED");
+    expect(new SessionExpiredError("x").code).toBe("SESSION_EXPIRED");
+    expect(new PortalContractError("x").code).toBe("PORTAL_CONTRACT");
+    expect(new TransientNetworkError("x").code).toBe("NETWORK");
+    expect(new RateLimitedError("x").code).toBe("RATE_LIMITED");
+  });
+
+  it("is an instance of Error and AppError", () => {
+    const error = new PortalContractError("x");
+    expect(error).toBeInstanceOf(Error);
+    expect(error).toBeInstanceOf(AppError);
+  });
+
+  it("keeps the subclass name and preserves the cause", () => {
+    const cause = new Error("root");
+    const error = new TransientNetworkError("boom", { cause });
+    expect(error.name).toBe("TransientNetworkError");
+    expect(error.cause).toBe(cause);
   });
 });

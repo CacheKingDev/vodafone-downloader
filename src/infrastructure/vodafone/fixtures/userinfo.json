@@ -1,0 +1,292 @@
+[
+  {
+    "title": "Herr",
+    "loginErrorCount": "0",
+    "levelOfAssurance": "WEB",
+    "lastLoginDate": "2026-01-01T00:00:00.000Z",
+    "externalIdentifier": [
+      {
+        "id": "1000000",
+        "owner": "ulm",
+        "type": "userId"
+      }
+    ],
+    "credentials": {
+      "id": "TwoFactorAuthentication",
+      "state": "inactive"
+    },
+    "isPreferredUsernameEmailAddress": false,
+    "sub": "1000000",
+    "name": "Max Mustermann",
+    "email": "max.mustermann@example.com",
+    "email_verified": true,
+    "given_name": "Max",
+    "family_name": "Mustermann",
+    "phone_number_verified": false,
+    "phoneNumber": "+491700000000",
+    "preferred_username": "MaxMuster",
+    "userAssets": [
+      {
+        "name": "GigaZuhause CableMax 1000",
+        "status": "activated",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+        "assetType": "Broadband",
+        "entityType": "product",
+        "role": "owner",
+        "entitlement": [
+          {
+            "action": "SubscriptionAdmin",
+            "function": "KIPSubscription"
+          }
+        ],
+        "externalIdentifier": [
+          {
+            "id": "0000000000",
+            "owner": "vkd",
+            "type": "customerNumber"
+          },
+          {
+            "id": "31941406",
+            "owner": "ulm",
+            "type": "subscriptionId"
+          }
+        ],
+        "@type": "Product",
+        "accountCategory": "consumer",
+        "assetCategory": "individual",
+        "assetSubCategory": "consumer",
+        "relatedAsset": [
+          {
+            "@type": "Account",
+            "status": "activated",
+            "externalIdentifier": [
+              {
+                "id": "0000000000",
+                "owner": "vkd",
+                "type": "accountNumber"
+              },
+              {
+                "id": "1556141",
+                "owner": "ulm",
+                "type": "accountId"
+              }
+            ],
+            "characteristic": [
+              {
+                "name": "stack",
+                "value": "Cable"
+              },
+              {
+                "name": "hasCableMail",
+                "value": "true"
+              },
+              {
+                "name": "isDefault",
+                "value": "true"
+              },
+              {
+                "name": "isSelected",
+                "value": "true"
+              }
+            ],
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+            "assetType": "Broadband",
+            "entityType": "billingAccount"
+          }
+        ],
+        "characteristic": [
+          {
+            "name": "footPrint",
+            "value": "vkd"
+          },
+          {
+            "name": "stack",
+            "value": "Cable"
+          },
+          {
+            "name": "subType",
+            "value": "KIP"
+          },
+          {
+            "name": "icon",
+            "value": "Internet"
+          }
+        ]
+      },
+      {
+        "name": "Vodafone CableMax 1000",
+        "status": "deactivated",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+        "assetType": "Broadband",
+        "entityType": "product",
+        "role": "owner",
+        "entitlement": [
+          {
+            "action": "SubscriptionAdmin",
+            "function": "KIPSubscription"
+          }
+        ],
+        "externalIdentifier": [
+          {
+            "id": "0000000000",
+            "owner": "vkd",
+            "type": "customerNumber"
+          },
+          {
+            "id": "31930341",
+            "owner": "ulm",
+            "type": "subscriptionId"
+          }
+        ],
+        "@type": "Product",
+        "accountCategory": "consumer",
+        "assetCategory": "individual",
+        "assetSubCategory": "consumer",
+        "relatedAsset": [
+          {
+            "@type": "Account",
+            "status": "activated",
+            "externalIdentifier": [
+              {
+                "id": "0000000000",
+                "owner": "vkd",
+                "type": "accountNumber"
+              },
+              {
+                "id": "1556141",
+                "owner": "ulm",
+                "type": "accountId"
+              }
+            ],
+            "characteristic": [
+              {
+                "name": "stack",
+                "value": "Cable"
+              },
+              {
+                "name": "hasCableMail",
+                "value": "true"
+              },
+              {
+                "name": "isDefault",
+                "value": "true"
+              },
+              {
+                "name": "isSelected",
+                "value": "true"
+              }
+            ],
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+            "assetType": "Broadband",
+            "entityType": "billingAccount"
+          }
+        ],
+        "characteristic": [
+          {
+            "name": "footPrint",
+            "value": "vkd"
+          },
+          {
+            "name": "stack",
+            "value": "Cable"
+          },
+          {
+            "name": "subType",
+            "value": "KIP"
+          },
+          {
+            "name": "icon",
+            "value": "Internet"
+          }
+        ]
+      },
+      {
+        "name": "Vodafone TV Connect Zuhause",
+        "status": "activated",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+        "assetType": "TV",
+        "entityType": "product",
+        "role": "owner",
+        "entitlement": [
+          {
+            "action": "SubscriptionAdmin",
+            "function": "TVSubscription"
+          }
+        ],
+        "externalIdentifier": [
+          {
+            "id": "0000000000",
+            "owner": "vkd",
+            "type": "customerNumber"
+          },
+          {
+            "id": "31941407",
+            "owner": "ulm",
+            "type": "subscriptionId"
+          }
+        ],
+        "@type": "Product",
+        "accountCategory": "consumer",
+        "assetCategory": "individual",
+        "assetSubCategory": "consumer",
+        "relatedAsset": [
+          {
+            "@type": "Account",
+            "status": "activated",
+            "externalIdentifier": [
+              {
+                "id": "0000000000",
+                "owner": "vkd",
+                "type": "accountNumber"
+              },
+              {
+                "id": "1556141",
+                "owner": "ulm",
+                "type": "accountId"
+              }
+            ],
+            "characteristic": [
+              {
+                "name": "stack",
+                "value": "Cable"
+              },
+              {
+                "name": "hasCableMail",
+                "value": "true"
+              },
+              {
+                "name": "isDefault",
+                "value": "true"
+              },
+              {
+                "name": "isSelected",
+                "value": "true"
+              }
+            ],
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+            "assetType": "Broadband",
+            "entityType": "billingAccount"
+          }
+        ],
+        "characteristic": [
+          {
+            "name": "footPrint",
+            "value": "vkd"
+          },
+          {
+            "name": "stack",
+            "value": "Cable"
+          },
+          {
+            "name": "subType",
+            "value": "TV"
+          },
+          {
+            "name": "icon",
+            "value": "TV"
+          }
+        ]
+      }
+    ]
+  }
+]

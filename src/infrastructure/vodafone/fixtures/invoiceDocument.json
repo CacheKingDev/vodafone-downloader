@@ -1,0 +1,11 @@
+{
+  "customerId": "urn:vf-de-dxl-tmf:kd:cable:can:0000000000",
+  "documentId": "2000000000",
+  "mime": "application/pdf",
+  "data": "JVBERi0xLjQKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgMjAwIDIwMF0+PmVuZG9iagp0cmFpbGVyPDwvUm9vdCAxIDAgUj4+CiUlRU9GCg==",
+  "_links": {
+    "self": {
+      "href": "https://api.vodafone.de/redacted"
+    }
+  }
+}

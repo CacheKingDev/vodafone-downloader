@@ -1,0 +1,292 @@
+[
+  {
+    "title": "Herr",
+    "loginErrorCount": "0",
+    "levelOfAssurance": "WEB",
+    "lastLoginDate": "2026-01-01T00:00:00.000Z",
+    "externalIdentifier": [
+      {
+        "id": "0000001",
+        "owner": "ulm",
+        "type": "userId"
+      }
+    ],
+    "credentials": {
+      "id": "TwoFactorAuthentication",
+      "state": "inactive"
+    },
+    "isPreferredUsernameEmailAddress": false,
+    "sub": "0000001",
+    "name": "Max Mustermann",
+    "email": "max.mustermann@example.com",
+    "email_verified": true,
+    "given_name": "Max",
+    "family_name": "Mustermann",
+    "phone_number_verified": false,
+    "phoneNumber": "+491700000000",
+    "preferred_username": "MaxMuster",
+    "userAssets": [
+      {
+        "name": "Max Mustermann",
+        "status": "activated",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
+        "assetType": "Broadband",
+        "entityType": "product",
+        "role": "owner",
+        "entitlement": [
+          {
+            "action": "SubscriptionAdmin",
+            "function": "KIPSubscription"
+          }
+        ],
+        "externalIdentifier": [
+          {
+            "id": "000000002",
+            "owner": "vkd",
+            "type": "customerNumber"
+          },
+          {
+            "id": "00000003",
+            "owner": "ulm",
+            "type": "subscriptionId"
+          }
+        ],
+        "@type": "Product",
+        "accountCategory": "consumer",
+        "assetCategory": "individual",
+        "assetSubCategory": "consumer",
+        "relatedAsset": [
+          {
+            "@type": "Account",
+            "status": "activated",
+            "externalIdentifier": [
+              {
+                "id": "000000002",
+                "owner": "vkd",
+                "type": "accountNumber"
+              },
+              {
+                "id": "0000004",
+                "owner": "ulm",
+                "type": "accountId"
+              }
+            ],
+            "characteristic": [
+              {
+                "name": "Max Mustermann",
+                "value": "Cable"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              }
+            ],
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
+            "assetType": "Broadband",
+            "entityType": "billingAccount"
+          }
+        ],
+        "characteristic": [
+          {
+            "name": "Max Mustermann",
+            "value": "vkd"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "Cable"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "KIP"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "Internet"
+          }
+        ]
+      },
+      {
+        "name": "Max Mustermann",
+        "status": "deactivated",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
+        "assetType": "Broadband",
+        "entityType": "product",
+        "role": "owner",
+        "entitlement": [
+          {
+            "action": "SubscriptionAdmin",
+            "function": "KIPSubscription"
+          }
+        ],
+        "externalIdentifier": [
+          {
+            "id": "000000002",
+            "owner": "vkd",
+            "type": "customerNumber"
+          },
+          {
+            "id": "00000005",
+            "owner": "ulm",
+            "type": "subscriptionId"
+          }
+        ],
+        "@type": "Product",
+        "accountCategory": "consumer",
+        "assetCategory": "individual",
+        "assetSubCategory": "consumer",
+        "relatedAsset": [
+          {
+            "@type": "Account",
+            "status": "activated",
+            "externalIdentifier": [
+              {
+                "id": "000000002",
+                "owner": "vkd",
+                "type": "accountNumber"
+              },
+              {
+                "id": "0000004",
+                "owner": "ulm",
+                "type": "accountId"
+              }
+            ],
+            "characteristic": [
+              {
+                "name": "Max Mustermann",
+                "value": "Cable"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              }
+            ],
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
+            "assetType": "Broadband",
+            "entityType": "billingAccount"
+          }
+        ],
+        "characteristic": [
+          {
+            "name": "Max Mustermann",
+            "value": "vkd"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "Cable"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "KIP"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "Internet"
+          }
+        ]
+      },
+      {
+        "name": "Max Mustermann",
+        "status": "activated",
+        "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
+        "assetType": "TV",
+        "entityType": "product",
+        "role": "owner",
+        "entitlement": [
+          {
+            "action": "SubscriptionAdmin",
+            "function": "TVSubscription"
+          }
+        ],
+        "externalIdentifier": [
+          {
+            "id": "000000002",
+            "owner": "vkd",
+            "type": "customerNumber"
+          },
+          {
+            "id": "00000006",
+            "owner": "ulm",
+            "type": "subscriptionId"
+          }
+        ],
+        "@type": "Product",
+        "accountCategory": "consumer",
+        "assetCategory": "individual",
+        "assetSubCategory": "consumer",
+        "relatedAsset": [
+          {
+            "@type": "Account",
+            "status": "activated",
+            "externalIdentifier": [
+              {
+                "id": "000000002",
+                "owner": "vkd",
+                "type": "accountNumber"
+              },
+              {
+                "id": "0000004",
+                "owner": "ulm",
+                "type": "accountId"
+              }
+            ],
+            "characteristic": [
+              {
+                "name": "Max Mustermann",
+                "value": "Cable"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              },
+              {
+                "name": "Max Mustermann",
+                "value": "true"
+              }
+            ],
+            "id": "urn:vf-de-dxl-tmf:kd:cable:can:000000002",
+            "assetType": "Broadband",
+            "entityType": "billingAccount"
+          }
+        ],
+        "characteristic": [
+          {
+            "name": "Max Mustermann",
+            "value": "vkd"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "Cable"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "TV"
+          },
+          {
+            "name": "Max Mustermann",
+            "value": "TV"
+          }
+        ]
+      }
+    ]
+  }
+]

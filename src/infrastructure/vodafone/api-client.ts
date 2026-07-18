@@ -4,9 +4,14 @@ import {
   SessionExpiredError,
   TransientNetworkError,
 } from "../../domain/errors.js";
-import type { DiscoveredAsset } from "../../domain/invoice.js";
+import type { DiscoveredAsset, DocumentPayload, Invoice } from "../../domain/invoice.js";
 import type { AuthSession } from "../../domain/vodafone-session.js";
-import { parsePortal, userinfoSchema } from "./schemas.js";
+import {
+  invoiceDocumentSchema,
+  invoiceListSchema,
+  parsePortal,
+  userinfoSchema,
+} from "./schemas.js";
 
 /** A narrow, injectable fetch: avoids the extra static members on `typeof fetch`. */
 export type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
@@ -46,6 +51,40 @@ export class VodafoneApiClient {
     const first = info[0];
     if (first === undefined) return [];
     return first.userAssets.map((asset) => ({ urn: asset.id }));
+  }
+
+  async listInvoices(session: AuthSession, customerUrn: string): Promise<Invoice[]> {
+    const raw = await this.request(session, `/customer/${customerUrn}/invoice`);
+    const response = parsePortal(invoiceListSchema, raw, "invoice");
+    return response.invoices.map((portalInvoice) => ({
+      number: portalInvoice.number,
+      issuedOn: portalInvoice.date,
+      dueOn: portalInvoice.dueDate ?? null,
+      amountCents: Math.round(portalInvoice.amount * 100),
+      // The portal omits a currency field; cable billing is EUR.
+      currency: "EUR",
+      subject: portalInvoice.about ?? null,
+      contractNumber:
+        portalInvoice.referencedBillingAccount?.productCategory?.[0]?.contractNumber?.[0] ?? null,
+      documents: portalInvoice.documents.map((doc) => ({
+        documentId: doc.documentId,
+        category: doc.category ?? null,
+        subType: doc.subType ?? null,
+      })),
+    }));
+  }
+
+  async fetchDocument(
+    session: AuthSession,
+    customerUrn: string,
+    documentId: string,
+  ): Promise<DocumentPayload> {
+    const raw = await this.request(
+      session,
+      `/customer/${customerUrn}/invoiceDocument/${documentId}`,
+    );
+    const doc = parsePortal(invoiceDocumentSchema, raw, "invoiceDocument");
+    return { mime: doc.mime, bytes: Buffer.from(doc.data, "base64") };
   }
 
   /** Performs one GET with retries, returns parsed JSON, or throws a mapped error. */

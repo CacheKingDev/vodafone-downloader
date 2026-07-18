@@ -66,4 +66,11 @@ describe("renderFilename", () => {
     // ... but a template with a literal empty segment fails.
     expect(() => renderFilename("a//x.pdf", context)).toThrow(TemplateError);
   });
+
+  it("collapses backslashes in values", () => {
+    const hostile: TemplateContext = { ...context, accountLabel: "..\\..\\evil" };
+    const rendered = renderFilename("{account_label}/x.pdf", hostile);
+    expect(rendered).not.toContain("\\");
+    expect(rendered.split("/").length).toBe(2);
+  });
 });

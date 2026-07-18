@@ -35,7 +35,7 @@ export function validateTemplate(template: string): void {
 function sanitizeValue(value: string): string {
   const cleaned = value
     // biome-ignore lint/suspicious/noControlCharactersInRegex: control chars are exactly what we strip
-    .replace(/[<>:"/|?*\u0000-\u001f]/g, "_")
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
     .replace(/\.{2,}/g, "_")
     .trim();
   return cleaned === "" ? "unknown" : cleaned;

@@ -101,3 +101,50 @@ describe("VodafoneApiClient mapping to domain", () => {
     expect(String(url)).toContain("/customer/urn:vf-de:cable:can:0000000000/invoice");
   });
 });
+
+describe("VodafoneApiClient retry policy", () => {
+  function retryingClient(fetchImpl: FetchLike): VodafoneApiClient {
+    return new VodafoneApiClient({
+      baseUrl: "https://api.test/v2",
+      fetchImpl,
+      maxRetries: 3,
+      baseDelayMs: 100,
+      capDelayMs: 1000,
+    });
+  }
+
+  it("retries a transient fault and then succeeds", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const fetchImpl = vi.fn<FetchLike>(async () => {
+      calls += 1;
+      if (calls < 3) return jsonResponse(500, {});
+      return jsonResponse(200, [{ userAssets: [] }]);
+    });
+    const promise = retryingClient(fetchImpl).discoverAssets(session);
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toEqual([]);
+    expect(calls).toBe(3);
+    vi.useRealTimers();
+  });
+
+  it("gives up after maxRetries and throws TransientNetworkError", async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn<FetchLike>(async () => jsonResponse(503, {}));
+    const promise = retryingClient(fetchImpl).discoverAssets(session);
+    const assertion = expect(promise).rejects.toBeInstanceOf(TransientNetworkError);
+    await vi.runAllTimersAsync();
+    await assertion;
+    // initial try + 3 retries
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    vi.useRealTimers();
+  });
+
+  it("never retries a rate limit", async () => {
+    const fetchImpl = vi.fn<FetchLike>(async () => jsonResponse(429, {}));
+    await expect(retryingClient(fetchImpl).discoverAssets(session)).rejects.toBeInstanceOf(
+      RateLimitedError,
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});

@@ -53,3 +53,18 @@ export class TransientNetworkError extends AppError {
 export class RateLimitedError extends AppError {
   readonly code = "RATE_LIMITED";
 }
+
+/** A filename template names unknown placeholders or renders an unsafe path. */
+export class TemplateError extends AppError {
+  readonly code = "TEMPLATE";
+}
+
+/** A downloaded document failed validation (magic bytes, minimum size). */
+export class DocumentValidationError extends AppError {
+  readonly code = "DOCUMENT_INVALID";
+}
+
+/** Writing a file to the downloads directory failed or was rejected as unsafe. */
+export class StorageError extends AppError {
+  readonly code = "STORAGE";
+}

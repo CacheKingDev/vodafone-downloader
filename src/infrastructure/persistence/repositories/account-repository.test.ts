@@ -97,3 +97,47 @@ describe("DrizzleAccountRepository", () => {
     expect(row?.statusDetail).toBeNull();
   });
 });
+
+describe("DrizzleAccountRepository.listSyncableIds", () => {
+  it("lists enabled accounts that do not need action, in insertion order", async () => {
+    const okId = insertAccount();
+    const [needsAction] = db
+      .insert(account)
+      .values({
+        label: "Blocked",
+        usernameEnc: cipher.encrypt("u"),
+        passwordEnc: cipher.encrypt("p"),
+        customerUrn: "urn:vf-de:cable:can:0000000002",
+        status: "needs_action",
+      })
+      .returning()
+      .all();
+    const [disabled] = db
+      .insert(account)
+      .values({
+        label: "Off",
+        usernameEnc: cipher.encrypt("u"),
+        passwordEnc: cipher.encrypt("p"),
+        customerUrn: "urn:vf-de:cable:can:0000000003",
+        enabled: false,
+      })
+      .returning()
+      .all();
+    const [errored] = db
+      .insert(account)
+      .values({
+        label: "Broken portal",
+        usernameEnc: cipher.encrypt("u"),
+        passwordEnc: cipher.encrypt("p"),
+        customerUrn: "urn:vf-de:cable:can:0000000004",
+        status: "error",
+      })
+      .returning()
+      .all();
+    if (needsAction === undefined || disabled === undefined || errored === undefined) {
+      throw new Error("test accounts were not created");
+    }
+    // error accounts DO sync again (spec section 3 clarification); the other two never.
+    await expect(repo.listSyncableIds()).resolves.toEqual([okId, errored.id]);
+  });
+});

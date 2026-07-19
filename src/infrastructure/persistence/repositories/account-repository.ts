@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import type { Account, AccountStatus } from "../../../domain/account.js";
 import type { AccountRepository } from "../../../domain/ports/repositories.js";
@@ -65,6 +65,15 @@ export class DrizzleAccountRepository implements AccountRepository {
       .set({ status, statusDetail: detail ?? null, updatedAt: nowSeconds() })
       .where(eq(account.id, id))
       .run();
+  }
+
+  async listSyncableIds(): Promise<number[]> {
+    const rows = this.#db
+      .select({ id: account.id })
+      .from(account)
+      .where(and(eq(account.enabled, true), ne(account.status, "needs_action")))
+      .all();
+    return rows.map((row) => row.id);
   }
 
   private decodeSession(blob: Buffer | null): AuthSession | null {

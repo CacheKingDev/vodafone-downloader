@@ -58,6 +58,7 @@ function makeDeps(overrides?: {
     findById: ReturnType<typeof vi.fn>;
     saveSession: ReturnType<typeof vi.fn>;
     setStatus: ReturnType<typeof vi.fn>;
+    listSyncableIds: ReturnType<typeof vi.fn>;
   };
   invoices: {
     existingNumbers: ReturnType<typeof vi.fn>;
@@ -86,6 +87,7 @@ function makeDeps(overrides?: {
       findById: vi.fn(async () => account),
       saveSession: vi.fn(async () => undefined),
       setStatus: vi.fn(async () => undefined),
+      listSyncableIds: vi.fn(async () => []),
     },
     invoices: {
       existingNumbers: vi.fn(async () => overrides?.known ?? new Set<string>()),

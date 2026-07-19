@@ -14,11 +14,34 @@ export interface RetryableDocument {
   readonly contractNumber: string | null;
 }
 
+export type RunTrigger = "schedule" | "manual";
+
+/** What a finished run persists — mirrors SyncReport minus the failure list. */
+export interface RunResult {
+  readonly outcome: "success" | "partial" | "failed";
+  readonly invoicesSeen: number;
+  readonly documentsStored: number;
+  readonly errorMessage: string | null;
+}
+
+/** One row in the run table per account sync. */
+export interface RunRepository {
+  /** Creates the row with started_at = now and returns its id. */
+  startRun(accountId: number, trigger: RunTrigger): Promise<number>;
+  finishRun(runId: number, result: RunResult): Promise<void>;
+}
+
 export interface AccountRepository {
   findById(id: number): Promise<Account | undefined>;
   /** Persists a renewed session encrypted, stamping session_refreshed_at. */
   saveSession(id: number, session: AuthSession): Promise<void>;
   setStatus(id: number, status: AccountStatus, detail?: string): Promise<void>;
+  /**
+   * Ids of accounts the scheduler may sync: enabled and not needs_action.
+   * Accounts in status "error" ARE included — retrying across runs is how the
+   * status heals after an app update (M4 spec section 3).
+   */
+  listSyncableIds(): Promise<number[]>;
 }
 
 export interface InvoiceRepository {

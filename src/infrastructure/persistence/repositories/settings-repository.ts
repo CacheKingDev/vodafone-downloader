@@ -21,11 +21,7 @@ export class DrizzleSettingsRepository implements SettingsRepository {
   }
 
   async filenameTemplate(): Promise<string> {
-    const row = this.#db
-      .select()
-      .from(setting)
-      .where(eq(setting.key, FILENAME_TEMPLATE_KEY))
-      .get();
+    const row = this.#db.select().from(setting).where(eq(setting.key, FILENAME_TEMPLATE_KEY)).get();
     if (row === undefined) return DEFAULT_FILENAME_TEMPLATE;
 
     let parsed: unknown;

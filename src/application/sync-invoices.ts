@@ -91,6 +91,7 @@ export async function syncAccount(deps: SyncDeps, accountId: number): Promise<Sy
       if (account.backfillFrom !== null && entry.issuedOn < account.backfillFrom) continue;
       await deps.invoices.insertInvoice(accountId, entry);
       invoicesNew += 1;
+      known.add(entry.number);
     }
 
     const template = await deps.settings.filenameTemplate();

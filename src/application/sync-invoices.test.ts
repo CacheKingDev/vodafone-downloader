@@ -167,6 +167,15 @@ describe("syncAccount discovery", () => {
     const report = await syncAccount(deps, 1);
     expect(report.invoicesNew).toBe(1);
   });
+
+  it("inserts a number only once when the portal repeats it in one response", async () => {
+    const deps = makeDeps({
+      invoices: [invoiceOf("111111111111", "2026-01-01"), invoiceOf("111111111111", "2026-01-01")],
+    });
+    const report = await syncAccount(deps, 1);
+    expect(report.invoicesNew).toBe(1);
+    expect(deps.invoices.insertInvoice).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("syncAccount document download", () => {

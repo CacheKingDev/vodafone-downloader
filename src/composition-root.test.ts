@@ -78,4 +78,15 @@ describe("createApplication", () => {
     await expect(application.shutdown()).rejects.toThrow(closeFailure);
     expect(application.db.$client.open).toBe(false);
   });
+
+  it("exposes a sync function", async () => {
+    application = await createApplication({
+      CONFIG_DIR: dir,
+      DOWNLOADS_DIR: join(dir, "downloads"),
+      LOG_LEVEL: "silent",
+      NODE_ENV: "test",
+    });
+
+    expect(typeof application.sync).toBe("function");
+  });
 });

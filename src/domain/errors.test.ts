@@ -4,10 +4,13 @@ import {
   AuthenticationFailedError,
   ConfigError,
   CryptoError,
+  DocumentValidationError,
   PersistenceError,
   PortalContractError,
   RateLimitedError,
   SessionExpiredError,
+  StorageError,
+  TemplateError,
   TransientNetworkError,
 } from "./errors.js";
 
@@ -53,6 +56,21 @@ describe("provider errors", () => {
     const cause = new Error("root");
     const error = new TransientNetworkError("boom", { cause });
     expect(error.name).toBe("TransientNetworkError");
+    expect(error.cause).toBe(cause);
+  });
+});
+
+describe("storage errors", () => {
+  it("exposes a stable code per subclass", () => {
+    expect(new TemplateError("x").code).toBe("TEMPLATE");
+    expect(new DocumentValidationError("x").code).toBe("DOCUMENT_INVALID");
+    expect(new StorageError("x").code).toBe("STORAGE");
+  });
+
+  it("is an AppError with preserved cause", () => {
+    const cause = new Error("root");
+    const error = new StorageError("boom", { cause });
+    expect(error).toBeInstanceOf(AppError);
     expect(error.cause).toBe(cause);
   });
 });

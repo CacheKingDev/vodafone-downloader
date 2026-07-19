@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, open, rename } from "node:fs/promises";
+import { mkdir, open, rename, rm } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { StorageError } from "../../domain/errors.js";
 import type { FileStorage, StoredFile } from "../../domain/ports/file-storage.js";
@@ -33,14 +33,20 @@ export class AtomicFileStorage implements FileStorage {
     await mkdir(dirname(finalPath), { recursive: true });
 
     const tmpPath = join(tmpDir, randomUUID());
-    const handle = await open(tmpPath, "w");
     try {
-      await handle.writeFile(bytes);
-      await handle.sync();
-    } finally {
-      await handle.close();
+      const handle = await open(tmpPath, "w");
+      try {
+        await handle.writeFile(bytes);
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      await rename(tmpPath, finalPath);
+    } catch (error) {
+      // Best-effort cleanup: a failed store must not leak tmp debris.
+      await rm(tmpPath, { force: true }).catch(() => undefined);
+      throw error;
     }
-    await rename(tmpPath, finalPath);
 
     return {
       relativePath: relative(this.#root, finalPath).split(sep).join("/"),

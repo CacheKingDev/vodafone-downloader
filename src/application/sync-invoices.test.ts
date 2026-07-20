@@ -96,7 +96,10 @@ function makeDeps(overrides?: {
       markStored: vi.fn(async () => undefined),
       markFailed: vi.fn(async () => undefined),
     },
-    settings: { filenameTemplate: vi.fn(async () => "{invoice_number}.pdf") },
+    settings: {
+      filenameTemplate: vi.fn(async () => "{invoice_number}.pdf"),
+      syncSchedule: vi.fn(async () => "0 6 * * *"),
+    },
     storage: {
       store: vi.fn(async (relativePath: string, bytes: Buffer) => ({
         relativePath,

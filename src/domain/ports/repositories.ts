@@ -58,4 +58,6 @@ export interface InvoiceRepository {
 export interface SettingsRepository {
   /** The validated filename template, falling back to the default. */
   filenameTemplate(): Promise<string>;
+  /** The global cron expression for scheduled syncs, falling back to the default. */
+  syncSchedule(): Promise<string>;
 }

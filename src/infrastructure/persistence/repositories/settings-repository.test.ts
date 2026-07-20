@@ -2,11 +2,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { TemplateError } from "../../../domain/errors.js";
+import { ConfigError, TemplateError } from "../../../domain/errors.js";
 import { DEFAULT_FILENAME_TEMPLATE } from "../../storage/filename-template.js";
 import { closeDatabase, createDatabase, type Database } from "../database.js";
 import { setting } from "../schema.js";
-import { DrizzleSettingsRepository } from "./settings-repository.js";
+import { DEFAULT_SYNC_SCHEDULE, DrizzleSettingsRepository } from "./settings-repository.js";
 
 let dir: string;
 let db: Database;
@@ -45,5 +45,30 @@ describe("DrizzleSettingsRepository.filenameTemplate", () => {
   it("throws TemplateError when the stored value is not JSON for a string", async () => {
     db.insert(setting).values({ key: "filename_template", value: "not json{" }).run();
     await expect(repo.filenameTemplate()).rejects.toBeInstanceOf(TemplateError);
+  });
+});
+
+describe("DrizzleSettingsRepository.syncSchedule", () => {
+  it("returns the default when no setting exists", async () => {
+    await expect(repo.syncSchedule()).resolves.toBe(DEFAULT_SYNC_SCHEDULE);
+  });
+
+  it("returns a stored schedule", async () => {
+    db.insert(setting)
+      .values({ key: "sync_schedule", value: JSON.stringify("0 7 * * 1") })
+      .run();
+    await expect(repo.syncSchedule()).resolves.toBe("0 7 * * 1");
+  });
+
+  it("throws ConfigError when the stored value is not JSON for a string", async () => {
+    db.insert(setting).values({ key: "sync_schedule", value: "not json{" }).run();
+    await expect(repo.syncSchedule()).rejects.toBeInstanceOf(ConfigError);
+  });
+
+  it("throws ConfigError for an empty string", async () => {
+    db.insert(setting)
+      .values({ key: "sync_schedule", value: JSON.stringify("") })
+      .run();
+    await expect(repo.syncSchedule()).rejects.toBeInstanceOf(ConfigError);
   });
 });

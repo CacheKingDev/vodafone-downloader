@@ -89,4 +89,17 @@ describe("createApplication", () => {
 
     expect(typeof application.sync).toBe("function");
   });
+
+  it("exposes run functions and a stopped scheduler", async () => {
+    application = await createApplication({
+      CONFIG_DIR: dir,
+      DOWNLOADS_DIR: join(dir, "downloads"),
+      LOG_LEVEL: "silent",
+      NODE_ENV: "test",
+    });
+
+    expect(typeof application.runAll).toBe("function");
+    expect(typeof application.runAccount).toBe("function");
+    expect(application.scheduler.nextSyncRun()).toBeNull();
+  });
 });

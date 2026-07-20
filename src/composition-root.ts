@@ -1,8 +1,10 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
+import { type RunAllResult, RunCoordinator, type RunSummary } from "./application/run-sync.js";
 import { type SyncReport, syncAccount } from "./application/sync-invoices.js";
 import { type AppConfig, loadConfig } from "./config/env.js";
+import type { RunTrigger } from "./domain/ports/repositories.js";
 import { Cipher } from "./infrastructure/crypto/cipher.js";
 import { loadOrCreateKey } from "./infrastructure/crypto/key-store.js";
 import { createLogger, type Logger } from "./infrastructure/logging/logger.js";
@@ -13,7 +15,9 @@ import {
 } from "./infrastructure/persistence/database.js";
 import { DrizzleAccountRepository } from "./infrastructure/persistence/repositories/account-repository.js";
 import { DrizzleInvoiceRepository } from "./infrastructure/persistence/repositories/invoice-repository.js";
+import { DrizzleRunRepository } from "./infrastructure/persistence/repositories/run-repository.js";
 import { DrizzleSettingsRepository } from "./infrastructure/persistence/repositories/settings-repository.js";
+import { SyncScheduler } from "./infrastructure/scheduler/scheduler.js";
 import { AtomicFileStorage } from "./infrastructure/storage/atomic-file-storage.js";
 import { renderFilename } from "./infrastructure/storage/filename-template.js";
 import { validatePdf } from "./infrastructure/storage/pdf.js";
@@ -31,6 +35,9 @@ export interface Application {
   readonly cipher: Cipher;
   readonly db: Database;
   readonly sync: (accountId: number) => Promise<SyncReport>;
+  readonly runAll: (trigger: RunTrigger) => Promise<RunAllResult>;
+  readonly runAccount: (accountId: number, trigger: RunTrigger) => Promise<RunSummary | null>;
+  readonly scheduler: SyncScheduler;
   readonly shutdown: () => Promise<void>;
 }
 
@@ -92,12 +99,23 @@ export async function createApplication(
       accountId,
     );
 
+  const runs = new DrizzleRunRepository(db);
+  const coordinator = new RunCoordinator({ accounts, runs, sync, logger });
+
+  const scheduler = new SyncScheduler({
+    schedule: await settings.syncSchedule(),
+    artifactsDir: join(config.configDir, "artifacts"),
+    runAll: () => coordinator.runAll("schedule"),
+    logger,
+  });
+
   const app = await buildServer({ db, logger, version: VERSION });
 
   let closed = false;
   const shutdown = async (): Promise<void> => {
     if (closed) return;
     closed = true;
+    scheduler.stop();
     try {
       await app.close();
     } finally {
@@ -107,5 +125,16 @@ export async function createApplication(
     }
   };
 
-  return { app, config, logger, cipher, db, sync, shutdown };
+  return {
+    app,
+    config,
+    logger,
+    cipher,
+    db,
+    sync,
+    runAll: (trigger) => coordinator.runAll(trigger),
+    runAccount: (accountId, trigger) => coordinator.runAccount(accountId, trigger),
+    scheduler,
+    shutdown,
+  };
 }

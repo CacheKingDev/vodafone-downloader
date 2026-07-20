@@ -21,6 +21,9 @@ async function main(): Promise<void> {
     host: application.config.host,
     port: application.config.port,
   });
+
+  application.scheduler.start();
+  application.logger.info({ nextRun: application.scheduler.nextSyncRun() }, "scheduler active");
 }
 
 main().catch((error: unknown) => {

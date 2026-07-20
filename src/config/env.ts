@@ -8,6 +8,7 @@ const envSchema = z.object({
   CONFIG_DIR: z.string().min(1).default("/config"),
   DOWNLOADS_DIR: z.string().min(1).default("/downloads"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
+  ADMIN_PASSWORD: z.string().min(1, "ADMIN_PASSWORD must not be empty"),
   // 32 bytes as hex. Optional: key-store falls back to a generated key.
   ENCRYPTION_KEY: z
     .string()
@@ -24,6 +25,7 @@ export interface AppConfig {
   readonly configDir: string;
   readonly downloadsDir: string;
   readonly logLevel: LogLevel;
+  readonly adminPassword: string;
   readonly encryptionKey: string | undefined;
 }
 
@@ -50,6 +52,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     configDir: env.CONFIG_DIR,
     downloadsDir: env.DOWNLOADS_DIR,
     logLevel: env.LOG_LEVEL,
+    adminPassword: env.ADMIN_PASSWORD,
     encryptionKey: env.ENCRYPTION_KEY,
   };
 }

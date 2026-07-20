@@ -56,4 +56,26 @@ describe("AtomicFileStorage", () => {
   it("rejects absolute paths", async () => {
     await expect(storage.store("/etc/evil.pdf", bytes)).rejects.toBeInstanceOf(StorageError);
   });
+
+  it("strips DEL and C1 control characters from the filename segment", async () => {
+    // U+007F (DEL) + U+0080..U+009F (C1) — constructed via charCode to avoid encoding issues
+    const del = String.fromCharCode(127);
+    const c1 = String.fromCharCode(128);
+    const dirty = `rechnung${del}2026${c1}.pdf`;
+    const stored = await storage.store(dirty, bytes);
+    expect(stored.relativePath).toBe("rechnung2026.pdf");
+  });
+
+  it("rejects reserved Windows device names in any segment", async () => {
+    const devices = ["CON", "PRN", "AUX", "NUL", "COM1", "LPT9"];
+    for (const name of devices) {
+      const path = `${name.toLowerCase()}/rechnung.pdf`;
+      await expect(storage.store(path, bytes)).rejects.toThrow(/Reserved device name/);
+    }
+  });
+
+  it("rejects .tmp as a directory segment", async () => {
+    await expect(storage.store(".tmp/rechnung.pdf", bytes)).rejects.toThrow(/".tmp" is reserved/);
+    await expect(storage.store("foo/.tmp/bar.pdf", bytes)).rejects.toThrow(/".tmp" is reserved/);
+  });
 });

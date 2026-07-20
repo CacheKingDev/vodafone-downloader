@@ -5,6 +5,65 @@ import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node
 import { StorageError } from "../../domain/errors.js";
 import type { FileStorage, StoredFile } from "../../domain/ports/file-storage.js";
 
+/** Reserved Windows device names — any segment matching these is rejected. */
+const RESERVED_NAMES = new Set([
+  "CON",
+  "PRN",
+  "AUX",
+  "NUL",
+  "COM1",
+  "COM2",
+  "COM3",
+  "COM4",
+  "COM5",
+  "COM6",
+  "COM7",
+  "COM8",
+  "COM9",
+  "LPT1",
+  "LPT2",
+  "LPT3",
+  "LPT4",
+  "LPT5",
+  "LPT6",
+  "LPT7",
+  "LPT8",
+  "LPT9",
+]);
+
+/** Characters in the range U+007F (DEL) and U+0080…U+009F (C1 control). */
+const CONTROL_RANGE = /[-]/g;
+
+/**
+ * Strips DEL/C1 control characters from a filename segment so the resulting
+ * name is safe on Windows, Linux and macOS without changing the visible text.
+ */
+function sanitizeFileName(name: string): string {
+  return name.replace(CONTROL_RANGE, "");
+}
+
+/**
+ * Throws if any path segment is a reserved Windows device name (case-insensitive)
+ * or the directory name `.tmp` (collides with the storage's internal temp folder).
+ */
+function validateReservedName(relativePath: string): void {
+  // Normalize forward-slashes to platform sep so tests (and Linux-origin paths)
+  // work on Windows too. Split AFTER normalization — we must not re-join yet.
+  const normalized = relativePath.split("/").join(sep);
+  const parts = normalized.split(sep);
+  // The last part is the filename; every intermediate part is a directory.
+  for (const part of parts) {
+    if (!part) continue; // skip empty strings from leading/trailing slashes
+    if (part === ".tmp") {
+      throw new StorageError(`Directory name ".tmp" is reserved for internal use`);
+    }
+    const upper = part.toUpperCase();
+    if (RESERVED_NAMES.has(upper)) {
+      throw new StorageError(`Reserved device name in path: ${part}`);
+    }
+  }
+}
+
 /**
  * Writes below a fixed root only. The write is atomic: bytes go to
  * root/.tmp/<uuid>, are fsynced, then renamed to the target — same
@@ -22,6 +81,15 @@ export class AtomicFileStorage implements FileStorage {
     if (isAbsolute(relativePath)) {
       throw new StorageError(`Refusing absolute path: ${relativePath}`);
     }
+
+    // Sanitize invisible control characters so filenames are portable.
+    const sanitized = relativePath.split(sep).map(sanitizeFileName).join(sep);
+    if (sanitized !== relativePath) {
+      relativePath = sanitized;
+    }
+
+    validateReservedName(relativePath);
+
     const target = resolve(this.#root, relativePath);
     if (!target.startsWith(this.#root + sep)) {
       throw new StorageError(`Path escapes the downloads root: ${relativePath}`);

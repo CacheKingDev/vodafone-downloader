@@ -8,7 +8,7 @@ CREATE TABLE `account` (
 	`backfill_from` text,
 	`session_state_enc` blob,
 	`session_refreshed_at` integer,
-	`status` text DEFAULT 'needs_action' NOT NULL,
+	`status` text DEFAULT 'ok' NOT NULL,
 	`status_detail` text,
 	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL

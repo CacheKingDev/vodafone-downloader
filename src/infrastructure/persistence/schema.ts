@@ -24,7 +24,7 @@ export const account = sqliteTable(
     sessionRefreshedAt: integer("session_refreshed_at"),
     status: text("status", { enum: ["ok", "needs_action", "error"] })
       .notNull()
-      .default("needs_action"),
+      .default("ok"),
     statusDetail: text("status_detail"),
     createdAt: integer("created_at").notNull().default(now),
     updatedAt: integer("updated_at").notNull().default(now),

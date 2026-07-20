@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { ConfigError, TemplateError } from "../../../domain/errors.js";
 import type { SettingsRepository } from "../../../domain/ports/repositories.js";
+import { validateCronExpression } from "../../scheduler/scheduler.js";
 import { DEFAULT_FILENAME_TEMPLATE, validateTemplate } from "../../storage/filename-template.js";
 import type { Database } from "../database.js";
 import { setting } from "../schema.js";
@@ -58,6 +59,25 @@ export class DrizzleSettingsRepository implements SettingsRepository {
     }
     // Whether the expression is valid cron is the scheduler's call (Croner
     // parses it at start) — this layer only guarantees shape.
+    validateCronExpression(result.data);
     return result.data;
+  }
+
+  async setFilenameTemplate(template: string): Promise<void> {
+    validateTemplate(template);
+    this.#set(FILENAME_TEMPLATE_KEY, template);
+  }
+
+  async setSyncSchedule(schedule: string): Promise<void> {
+    validateCronExpression(schedule);
+    this.#set(SYNC_SCHEDULE_KEY, schedule);
+  }
+
+  #set(key: string, value: string): void {
+    this.#db
+      .insert(setting)
+      .values({ key, value: JSON.stringify(value) })
+      .onConflictDoUpdate({ target: setting.key, set: { value: JSON.stringify(value) } })
+      .run();
   }
 }

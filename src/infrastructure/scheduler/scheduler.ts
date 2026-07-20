@@ -6,6 +6,14 @@ import { cleanupArtifacts } from "./artifact-cleanup.js";
 /** Daily at 03:30 — cheap, and artifacts only need coarse retention. */
 const CLEANUP_SCHEDULE = "30 3 * * *";
 
+export function validateCronExpression(expression: string): void {
+  try {
+    new Cron(expression, { paused: true }).stop();
+  } catch (cause) {
+    throw new ConfigError(`Invalid cron expression: ${expression}`, { cause });
+  }
+}
+
 export interface SchedulerOptions {
   readonly schedule: string;
   readonly artifactsDir: string;
@@ -33,6 +41,7 @@ export class SyncScheduler {
       this.#options.logger.error({ err: error }, "scheduled job failed");
     };
     try {
+      validateCronExpression(this.#options.schedule);
       this.#syncJob = new Cron(this.#options.schedule, { catch: onJobError }, async () => {
         await this.#options.runAll();
       });

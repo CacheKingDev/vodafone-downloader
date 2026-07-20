@@ -1,10 +1,16 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lte, type SQL } from "drizzle-orm";
 import { PersistenceError } from "../../../domain/errors.js";
 import type { Invoice } from "../../../domain/invoice.js";
 import type { StoredFile } from "../../../domain/ports/file-storage.js";
-import type { InvoiceRepository, RetryableDocument } from "../../../domain/ports/repositories.js";
+import type {
+  InvoiceListFilters,
+  InvoiceListResult,
+  InvoiceRepository,
+  RetryableDocument,
+  StoredDocumentInfo,
+} from "../../../domain/ports/repositories.js";
 import type { Database } from "../database.js";
-import { invoice, invoiceDocument } from "../schema.js";
+import { account, invoice, invoiceDocument } from "../schema.js";
 
 /**
  * Dedup lives here as a set of known invoice numbers per account, backed by
@@ -101,5 +107,70 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
       .set({ state: "failed", lastError: message })
       .where(eq(invoiceDocument.id, documentId))
       .run();
+  }
+
+  async listInvoices(filters: InvoiceListFilters): Promise<InvoiceListResult> {
+    const conditions = this.#invoiceConditions(filters);
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const items = this.#db
+      .select({
+        id: invoice.id,
+        accountId: invoice.accountId,
+        accountLabel: account.label,
+        number: invoice.number,
+        issuedOn: invoice.issuedOn,
+        dueOn: invoice.dueOn,
+        amountCents: invoice.amountCents,
+        currency: invoice.currency,
+        subject: invoice.subject,
+        contractNumber: invoice.contractNumber,
+        documentId: invoiceDocument.id,
+        documentState: invoiceDocument.state,
+        relativePath: invoiceDocument.relativePath,
+        lastError: invoiceDocument.lastError,
+      })
+      .from(invoice)
+      .innerJoin(account, eq(invoice.accountId, account.id))
+      .leftJoin(invoiceDocument, eq(invoiceDocument.invoiceId, invoice.id))
+      .where(where)
+      .orderBy(desc(invoice.issuedOn), asc(invoice.number))
+      .limit(filters.limit)
+      .offset(filters.offset)
+      .all();
+    const totalRow = this.#db
+      .select({ value: count() })
+      .from(invoice)
+      .innerJoin(account, eq(invoice.accountId, account.id))
+      .leftJoin(invoiceDocument, eq(invoiceDocument.invoiceId, invoice.id))
+      .where(where)
+      .get();
+    return { items, total: totalRow?.value ?? 0 };
+  }
+
+  async findStoredDocument(documentId: number): Promise<StoredDocumentInfo | undefined> {
+    const row = this.#db
+      .select({
+        relativePath: invoiceDocument.relativePath,
+        sha256: invoiceDocument.sha256,
+        sizeBytes: invoiceDocument.sizeBytes,
+      })
+      .from(invoiceDocument)
+      .where(and(eq(invoiceDocument.id, documentId), eq(invoiceDocument.state, "stored")))
+      .get();
+    if (row === undefined || row.relativePath === null) return undefined;
+    return {
+      relativePath: row.relativePath,
+      sha256: row.sha256,
+      sizeBytes: row.sizeBytes,
+    };
+  }
+
+  #invoiceConditions(filters: InvoiceListFilters): SQL[] {
+    const conditions: SQL[] = [];
+    if (filters.accountId !== undefined) conditions.push(eq(invoice.accountId, filters.accountId));
+    if (filters.state !== undefined) conditions.push(eq(invoiceDocument.state, filters.state));
+    if (filters.from !== undefined) conditions.push(gte(invoice.issuedOn, filters.from));
+    if (filters.to !== undefined) conditions.push(lte(invoice.issuedOn, filters.to));
+    return conditions;
   }
 }

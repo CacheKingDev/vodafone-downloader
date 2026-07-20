@@ -4,7 +4,10 @@
  * changes. Values are verified against the real form by the smoke script.
  */
 export const loginSelectors = {
-  usernameInput: "input#username, input[name='username'], input[type='email']",
-  passwordInput: "input#password, input[name='password'], input[type='password']",
-  submitButton: "button[type='submit'], button#login-submit",
+  cookieRejectButton: "button#dip-consent-summary-reject-all",
+  usernameInput:
+    "input#username, input#username-text, input[name='username'], input[name='username-text'], input[type='email']",
+  passwordInput:
+    "input#password, input#passwordField-input, input[name='password'], input[name='passwordField'], input[type='password']",
+  submitButton: "button#submit, button[type='submit'], button#login-submit",
 } as const;

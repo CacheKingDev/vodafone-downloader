@@ -37,14 +37,12 @@ export interface LoggerOptions {
   readonly level: string;
   readonly pretty: boolean;
   readonly destination?: pino.DestinationStream;
+  readonly logFile?: string;
 }
 
 export function createLogger(options: LoggerOptions): Logger {
-  if (options.pretty && options.destination !== undefined) {
-    throw new Error(
-      "createLogger: 'pretty' and 'destination' cannot be combined — pino replaces the " +
-        "destination stream with the pino-pretty transport internally, silently ignoring it",
-    );
+  if ((options.pretty || options.logFile !== undefined) && options.destination !== undefined) {
+    throw new Error("createLogger: pretty/logFile transports cannot be combined with destination");
   }
 
   const config: pino.LoggerOptions = {
@@ -54,10 +52,42 @@ export function createLogger(options: LoggerOptions): Logger {
     timestamp: pino.stdTimeFunctions.isoTime,
   };
 
-  if (options.pretty) {
+  if (options.pretty && options.logFile !== undefined) {
+    config.transport = {
+      targets: [
+        {
+          target: "pino-pretty",
+          level: options.level,
+          options: { colorize: true },
+        },
+        {
+          target: "pino-roll",
+          level: options.level,
+          options: {
+            file: options.logFile,
+            frequency: "daily",
+            size: "10m",
+            mkdir: true,
+            limit: { count: 7 },
+          },
+        },
+      ],
+    };
+  } else if (options.pretty) {
     config.transport = {
       target: "pino-pretty",
       options: { colorize: true },
+    };
+  } else if (options.logFile !== undefined) {
+    config.transport = {
+      target: "pino-roll",
+      options: {
+        file: options.logFile,
+        frequency: "daily",
+        size: "10m",
+        mkdir: true,
+        limit: { count: 7 },
+      },
     };
   }
 

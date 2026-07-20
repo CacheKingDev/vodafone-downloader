@@ -77,7 +77,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'needs_action'"
+          "default": "'ok'"
         },
         "status_detail": {
           "name": "status_detail",

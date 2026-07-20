@@ -16,6 +16,77 @@ export interface RetryableDocument {
 
 export type RunTrigger = "schedule" | "manual";
 
+export interface AccountSummary {
+  readonly id: number;
+  readonly label: string;
+  readonly customerUrn: string;
+  readonly enabled: boolean;
+  readonly backfillFrom: string | null;
+  readonly status: AccountStatus;
+  readonly statusDetail: string | null;
+  readonly sessionRefreshedAt: number | null;
+}
+
+export interface CreateAccountInput {
+  readonly label: string;
+  readonly credentials: {
+    readonly username: string;
+    readonly password: string;
+  };
+  readonly customerUrn: string;
+  readonly status: AccountStatus;
+}
+
+export interface InvoiceListFilters {
+  readonly accountId?: number;
+  readonly state?: "pending" | "stored" | "failed";
+  readonly from?: string;
+  readonly to?: string;
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface InvoiceListItem {
+  readonly id: number;
+  readonly accountId: number;
+  readonly accountLabel: string;
+  readonly number: string;
+  readonly issuedOn: string;
+  readonly dueOn: string | null;
+  readonly amountCents: number;
+  readonly currency: string;
+  readonly subject: string | null;
+  readonly contractNumber: string | null;
+  readonly documentId: number | null;
+  readonly documentState: "pending" | "stored" | "failed" | null;
+  readonly relativePath: string | null;
+  readonly lastError: string | null;
+}
+
+export interface InvoiceListResult {
+  readonly items: readonly InvoiceListItem[];
+  readonly total: number;
+}
+
+export interface StoredDocumentInfo {
+  readonly relativePath: string;
+  readonly sha256: string | null;
+  readonly sizeBytes: number | null;
+}
+
+export interface RunListItem {
+  readonly id: number;
+  readonly accountId: number | null;
+  readonly accountLabel: string | null;
+  readonly trigger: RunTrigger;
+  readonly startedAt: number;
+  readonly finishedAt: number | null;
+  readonly outcome: "success" | "partial" | "failed" | null;
+  readonly invoicesSeen: number;
+  readonly documentsStored: number;
+  readonly errorMessage: string | null;
+}
+
 /** What a finished run persists — mirrors SyncReport minus the failure list. */
 export interface RunResult {
   readonly outcome: "success" | "partial" | "failed";
@@ -60,4 +131,27 @@ export interface SettingsRepository {
   filenameTemplate(): Promise<string>;
   /** The global cron expression for scheduled syncs, falling back to the default. */
   syncSchedule(): Promise<string>;
+}
+
+export interface AccountUiRepository extends AccountRepository {
+  create(account: CreateAccountInput): Promise<number>;
+  listAll(): Promise<AccountSummary[]>;
+  updateLabel(id: number, label: string): Promise<void>;
+  delete(id: number): Promise<void>;
+  setEnabled(id: number, enabled: boolean): Promise<void>;
+}
+
+export interface InvoiceUiRepository extends InvoiceRepository {
+  listInvoices(filters: InvoiceListFilters): Promise<InvoiceListResult>;
+  findStoredDocument(documentId: number): Promise<StoredDocumentInfo | undefined>;
+}
+
+export interface SettingsUiRepository extends SettingsRepository {
+  setFilenameTemplate(template: string): Promise<void>;
+  setSyncSchedule(schedule: string): Promise<void>;
+}
+
+export interface RunUiRepository extends RunRepository {
+  listRecent(limit: number): Promise<RunListItem[]>;
+  findRun(id: number): Promise<RunListItem | undefined>;
 }

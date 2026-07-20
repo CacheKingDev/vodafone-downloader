@@ -5,6 +5,9 @@ import { type RunAllResult, RunCoordinator, type RunSummary } from "./applicatio
 import { type SyncReport, syncAccount } from "./application/sync-invoices.js";
 import { type AppConfig, loadConfig } from "./config/env.js";
 import type { RunTrigger } from "./domain/ports/repositories.js";
+import { hashAdminPassword } from "./infrastructure/auth/admin-auth.js";
+import { DiscoveryTokenStore } from "./infrastructure/auth/discovery-token-store.js";
+import { SessionStore } from "./infrastructure/auth/session-store.js";
 import { Cipher } from "./infrastructure/crypto/cipher.js";
 import { loadOrCreateKey } from "./infrastructure/crypto/key-store.js";
 import { createLogger, type Logger } from "./infrastructure/logging/logger.js";
@@ -52,13 +55,15 @@ export async function createApplication(
 ): Promise<Application> {
   const config = loadConfig(env);
 
+  mkdirSync(config.configDir, { recursive: true });
+  mkdirSync(config.downloadsDir, { recursive: true });
+  const logFile = join(config.configDir, "app.log");
+
   const logger = createLogger({
     level: config.logLevel,
     pretty: config.nodeEnv === "development",
+    logFile,
   });
-
-  mkdirSync(config.configDir, { recursive: true });
-  mkdirSync(config.downloadsDir, { recursive: true });
 
   const cipher = new Cipher(loadOrCreateKey(config.configDir, config.encryptionKey));
 
@@ -71,6 +76,8 @@ export async function createApplication(
   const invoices = new DrizzleInvoiceRepository(db);
   const settings = new DrizzleSettingsRepository(db);
   const storage = new AtomicFileStorage(config.downloadsDir);
+  const sessions = new SessionStore(db);
+  sessions.deleteExpired();
 
   // Portal endpoints (design spec section 3). Silent renewal is confirmed
   // supported by the milestone 2 smoke experiment.
@@ -100,6 +107,11 @@ export async function createApplication(
     );
 
   const runs = new DrizzleRunRepository(db);
+
+  // Reconcile interrupted runs from a crashed or killed previous process:
+  // anything started more than 15 min ago without a finish is "failed (interrupted)".
+  await runs.orphanCleanup(15 * 60 * 1000);
+
   const coordinator = new RunCoordinator({ accounts, runs, sync, logger });
 
   const scheduler = new SyncScheduler({
@@ -109,7 +121,34 @@ export async function createApplication(
     logger,
   });
 
-  const app = await buildServer({ db, logger, version: VERSION });
+  const app = await buildServer({
+    db,
+    logger,
+    version: VERSION,
+    accounts,
+    invoices,
+    runs,
+    settings,
+    cipher,
+    discoveryTokens: new DiscoveryTokenStore(),
+    discoverAssets: async (credentials) => {
+      const session = await provider.getSession(credentials);
+      return provider.discoverAssets(session);
+    },
+    runAccount: (accountId, trigger) => coordinator.runAccount(accountId, trigger),
+    renewSession: async (accountId) => {
+      const account = await accounts.findById(accountId);
+      if (account === undefined) return;
+      const session = await provider.getSession(account.credentials);
+      await accounts.saveSession(accountId, session);
+    },
+    passwordHash: hashAdminPassword(config.adminPassword),
+    sessions,
+    secureCookie: config.nodeEnv === "production",
+    downloadsDir: config.downloadsDir,
+    logFile,
+    nextRun: () => scheduler.nextSyncRun(),
+  });
 
   let closed = false;
   const shutdown = async (): Promise<void> => {

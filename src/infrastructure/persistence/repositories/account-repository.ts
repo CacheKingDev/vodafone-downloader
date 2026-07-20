@@ -1,7 +1,11 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import type { Account, AccountStatus } from "../../../domain/account.js";
-import type { AccountRepository } from "../../../domain/ports/repositories.js";
+import type {
+  AccountRepository,
+  AccountSummary,
+  CreateAccountInput,
+} from "../../../domain/ports/repositories.js";
 import type { AuthSession } from "../../../domain/vodafone-session.js";
 import type { Cipher } from "../../crypto/cipher.js";
 import type { Database } from "../database.js";
@@ -74,6 +78,62 @@ export class DrizzleAccountRepository implements AccountRepository {
       .where(and(eq(account.enabled, true), ne(account.status, "needs_action")))
       .all();
     return rows.map((row) => row.id);
+  }
+
+  async create(accountData: CreateAccountInput): Promise<number> {
+    const result = this.#db
+      .insert(account)
+      .values({
+        label: accountData.label,
+        usernameEnc: this.#cipher.encrypt(accountData.credentials.username),
+        passwordEnc: this.#cipher.encrypt(accountData.credentials.password),
+        customerUrn: accountData.customerUrn,
+        status: accountData.status,
+        enabled: true,
+        createdAt: nowSeconds(),
+        updatedAt: nowSeconds(),
+      })
+      .returning({ id: account.id })
+      .all();
+    const created = result[0];
+    if (created === undefined) {
+      throw new Error("Account insert returned no row");
+    }
+    return created.id;
+  }
+
+  async listAll(): Promise<AccountSummary[]> {
+    const rows = this.#db.select().from(account).orderBy(asc(account.label)).all();
+    return rows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      customerUrn: row.customerUrn,
+      enabled: row.enabled,
+      backfillFrom: row.backfillFrom,
+      status: row.status,
+      statusDetail: row.statusDetail,
+      sessionRefreshedAt: row.sessionRefreshedAt,
+    }));
+  }
+
+  async updateLabel(id: number, label: string): Promise<void> {
+    this.#db
+      .update(account)
+      .set({ label, updatedAt: nowSeconds() })
+      .where(eq(account.id, id))
+      .run();
+  }
+
+  async delete(id: number): Promise<void> {
+    this.#db.delete(account).where(eq(account.id, id)).run();
+  }
+
+  async setEnabled(id: number, enabled: boolean): Promise<void> {
+    this.#db
+      .update(account)
+      .set({ enabled, updatedAt: nowSeconds() })
+      .where(eq(account.id, id))
+      .run();
   }
 
   private decodeSession(blob: Buffer | null): AuthSession | null {

@@ -26,6 +26,7 @@ describe("createApplication", () => {
       DOWNLOADS_DIR: join(dir, "downloads"),
       LOG_LEVEL: "silent",
       NODE_ENV: "test",
+      ADMIN_PASSWORD: "test-password",
     });
 
     const response = await application.app.inject({ method: "GET", url: "/health" });
@@ -40,6 +41,7 @@ describe("createApplication", () => {
       LOG_LEVEL: "silent",
       NODE_ENV: "test",
       PORT: "9999",
+      ADMIN_PASSWORD: "test-password",
     });
 
     expect(application.config.port).toBe(9999);
@@ -51,6 +53,7 @@ describe("createApplication", () => {
       DOWNLOADS_DIR: join(dir, "downloads"),
       LOG_LEVEL: "silent",
       NODE_ENV: "test",
+      ADMIN_PASSWORD: "test-password",
     });
 
     // SIGTERM can arrive twice; the second must not crash the process.
@@ -64,6 +67,7 @@ describe("createApplication", () => {
       DOWNLOADS_DIR: join(dir, "downloads"),
       LOG_LEVEL: "silent",
       NODE_ENV: "test",
+      ADMIN_PASSWORD: "test-password",
     });
 
     // The hook must be async: avvio (Fastify's boot/close engine) only turns
@@ -85,6 +89,7 @@ describe("createApplication", () => {
       DOWNLOADS_DIR: join(dir, "downloads"),
       LOG_LEVEL: "silent",
       NODE_ENV: "test",
+      ADMIN_PASSWORD: "test-password",
     });
 
     expect(typeof application.sync).toBe("function");
@@ -96,6 +101,7 @@ describe("createApplication", () => {
       DOWNLOADS_DIR: join(dir, "downloads"),
       LOG_LEVEL: "silent",
       NODE_ENV: "test",
+      ADMIN_PASSWORD: "test-password",
     });
 
     expect(typeof application.runAll).toBe("function");

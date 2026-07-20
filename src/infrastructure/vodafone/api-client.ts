@@ -16,6 +16,17 @@ import {
 /** A narrow, injectable fetch: avoids the extra static members on `typeof fetch`. */
 export type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
+/**
+ * Apigee gateway credentials for the portal's own "MyVFWeb" first-party
+ * client. Found by comparing our bearer-only request (rejected with
+ * `apigee.INVALID_CLIENT_CREDENTIALS`, HTTP 401, even with a fresh valid
+ * token) against the real portal frontend's own request headers: the gateway
+ * checks these independently of the OAuth token. Static per client, not
+ * per-session — same values the public web app ships.
+ */
+const API_KEY = "aEIoMCae0A933wBL0bLlS6SwSBfkKwM5";
+const CLIENT_ID = "MyVFWeb";
+
 export interface ApiClientOptions {
   readonly baseUrl: string;
   readonly fetchImpl?: FetchLike;
@@ -50,7 +61,18 @@ export class VodafoneApiClient {
     // userinfo is an array; the assets live on the first (only) entry.
     const first = info[0];
     if (first === undefined) return [];
-    return first.userAssets.map((asset) => ({ urn: asset.id }));
+    // Each product (broadband, TV, ...) under one billing account shares that
+    // account's URN. We operate at the account level (listInvoices takes only
+    // a customerUrn), so duplicates here are the same selectable account, not
+    // distinct choices — collapse them to one.
+    const seen = new Set<string>();
+    const assets: DiscoveredAsset[] = [];
+    for (const asset of first.userAssets) {
+      if (seen.has(asset.id)) continue;
+      seen.add(asset.id);
+      assets.push({ urn: asset.id });
+    }
+    return assets;
   }
 
   async listInvoices(session: AuthSession, customerUrn: string): Promise<Invoice[]> {
@@ -97,6 +119,11 @@ export class VodafoneApiClient {
           headers: {
             authorization: `Bearer ${session.accessToken}`,
             accept: "application/json",
+            "content-type": "application/json",
+            "x-api-key": API_KEY,
+            "x-vf-clientid": CLIENT_ID,
+            "x-vf-api": String(Date.now()),
+            referer: "https://www.vodafone.de/",
           },
         });
         return await this.handleResponse(response);

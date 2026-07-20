@@ -70,6 +70,25 @@ describe("VodafoneApiClient error mapping", () => {
     const headers = new Headers(init?.headers);
     expect(headers.get("authorization")).toBe("Bearer tok");
   });
+
+  it("collapses userAssets that share the same account urn", async () => {
+    const fetchImpl = vi.fn<FetchLike>(async () =>
+      jsonResponse(200, [
+        {
+          userAssets: [
+            { id: "urn:vf-de-dxl-tmf:kd:cable:can:1" },
+            { id: "urn:vf-de-dxl-tmf:kd:cable:can:1" },
+            { id: "urn:vf-de-dxl-tmf:kd:cable:can:2" },
+          ],
+        },
+      ]),
+    );
+    const assets = await clientWith(fetchImpl).discoverAssets(session);
+    expect(assets).toEqual([
+      { urn: "urn:vf-de-dxl-tmf:kd:cable:can:1" },
+      { urn: "urn:vf-de-dxl-tmf:kd:cable:can:2" },
+    ]);
+  });
 });
 
 describe("VodafoneApiClient mapping to domain", () => {

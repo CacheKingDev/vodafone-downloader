@@ -87,16 +87,6 @@ export class VodafoneAuthenticator {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    let tokenBody: unknown;
-    page.on("response", async (response) => {
-      if (
-        response.url().startsWith(this.#options.tokenUrl) &&
-        response.request().method() === "POST"
-      ) {
-        tokenBody = await response.json().catch(() => undefined);
-      }
-    });
-
     await page.goto(this.#options.loginUrl);
     await page
       .locator(loginSelectors.cookieRejectButton)
@@ -107,6 +97,31 @@ export class VodafoneAuthenticator {
     await page.locator(loginSelectors.usernameInput).waitFor({ state: "visible", timeout: 30_000 });
     await page.fill(loginSelectors.usernameInput, credentials.username);
     await page.fill(loginSelectors.passwordInput, credentials.password);
+
+    // Attach the listener only now, right before the action that actually
+    // triggers the login token exchange. The portal fires a silent SSO probe
+    // against the same token endpoint while the account page loads (before
+    // any credentials are entered); registering earlier let that unrelated
+    // response satisfy the wait below and short-circuit fullLogin() with an
+    // unauthenticated token — the API then rejects it with 401 on first use.
+    let tokenBody: unknown;
+    page.on("response", async (response) => {
+      if (
+        response.url().startsWith(this.#options.tokenUrl) &&
+        response.request().method() === "POST"
+      ) {
+        const body = await response.json().catch(() => undefined);
+        this.#options.logger.debug(
+          {
+            status: response.status(),
+            keys: body !== null && typeof body === "object" ? Object.keys(body) : typeof body,
+          },
+          "captured login token response",
+        );
+        tokenBody = body;
+      }
+    });
+
     await page
       .locator(loginSelectors.submitButton)
       .filter({ hasText: /Anmelden/i })

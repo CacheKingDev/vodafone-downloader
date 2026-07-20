@@ -13,6 +13,24 @@ import type { Logger } from "../logging/logger.js";
 import { loginSelectors } from "./selectors.js";
 import { parseTokenResponse } from "./token-parser.js";
 
+/**
+ * Polls `condition` until it is true or `timeoutMs` elapses, then returns
+ * either way — callers decide how to treat a timeout. Used instead of
+ * Playwright's `waitForLoadState("networkidle")`, which never resolves on
+ * pages with persistent background traffic (chat widgets, analytics) even
+ * after the response we actually care about has already arrived.
+ */
+export async function waitUntil(
+  condition: () => boolean,
+  timeoutMs: number,
+  pollIntervalMs = 100,
+): Promise<void> {
+  const start = Date.now();
+  while (!condition() && Date.now() - start < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+}
+
 export interface AuthenticatorOptions {
   readonly loginUrl: string;
   readonly tokenUrl: string;
@@ -80,10 +98,23 @@ export class VodafoneAuthenticator {
     });
 
     await page.goto(this.#options.loginUrl);
+    await page
+      .locator(loginSelectors.cookieRejectButton)
+      .click({ timeout: 5_000 })
+      .catch(() => {
+        // Consent may already be stored or not shown in all regions.
+      });
+    await page.locator(loginSelectors.usernameInput).waitFor({ state: "visible", timeout: 30_000 });
     await page.fill(loginSelectors.usernameInput, credentials.username);
     await page.fill(loginSelectors.passwordInput, credentials.password);
-    await page.click(loginSelectors.submitButton);
-    await page.waitForLoadState("networkidle");
+    await page
+      .locator(loginSelectors.submitButton)
+      .filter({ hasText: /Anmelden/i })
+      .click();
+    // networkidle is unreliable on this portal — background traffic (chat
+    // widget, analytics) can keep it from ever firing. Wait for the actual
+    // signal instead: the token response captured by the listener above.
+    await waitUntil(() => tokenBody !== undefined, 30_000);
 
     if (tokenBody === undefined) {
       await this.saveTrace(context, "login-failed");
@@ -115,7 +146,9 @@ export class VodafoneAuthenticator {
     });
 
     await page.goto(this.#options.authorizeUrl);
-    await page.waitForLoadState("networkidle");
+    // Same rationale as runLogin: wait for the token response, not for
+    // networkidle, which background portal traffic can keep from firing.
+    await waitUntil(() => tokenBody !== undefined, 30_000);
 
     if (tokenBody === undefined) {
       throw new SessionExpiredError("Silent renewal produced no token; a full login is required");

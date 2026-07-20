@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigError } from "../../domain/errors.js";
 import type { Logger } from "../logging/logger.js";
-import { SyncScheduler } from "./scheduler.js";
+import { SyncScheduler, validateCronExpression } from "./scheduler.js";
 
 let artifactsDir: string;
 const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn() } as unknown as Logger;
@@ -53,4 +53,22 @@ describe("SyncScheduler", () => {
     scheduler.stop();
     expect(scheduler.nextSyncRun()).toBeNull();
   });
+});
+
+describe("validateCronExpression", () => {
+  it("does not throw for a valid cron expression", () => {
+    expect(() => validateCronExpression("0 6 * * *")).not.toThrow();
+  });
+
+  it("throws ConfigError with the offending expression in the message for invalid input", () => {
+    expect(() => validateCronExpression("not a cron")).toThrow(ConfigError);
+    expect(() => validateCronExpression("not a cron")).toThrow(/not a cron/);
+  });
+
+  it.each(["0 6 * * *", "0 6 * * 1", "0 6 1 * *"])(
+    "accepts the settings UI preset %s",
+    (expression) => {
+      expect(() => validateCronExpression(expression)).not.toThrow();
+    },
+  );
 });

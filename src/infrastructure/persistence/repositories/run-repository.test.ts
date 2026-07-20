@@ -74,4 +74,110 @@ describe("DrizzleRunRepository", () => {
     expect(row?.outcome).toBe("failed");
     expect(row?.errorMessage).toBe("portal down");
   });
+
+  it("marks old unfinished runs as interrupted", async () => {
+    // Insert a manual row with started_at in the past and finished_at = NULL.
+    const now = Math.floor(Date.now() / 1000);
+    db.insert(run)
+      .values({
+        accountId,
+        trigger: "schedule",
+        startedAt: now - 20 * 60, // 20 min ago (> 15 min grace window)
+      })
+      .run();
+
+    await repo.orphanCleanup(15 * 60 * 1000);
+
+    const rows = db.select().from(run).all();
+    const interrupted = rows.filter((row) => row.finishedAt !== null && row.outcome === "failed");
+    expect(interrupted.length).toBe(1);
+  });
+});
+
+describe("DrizzleRunRepository.listRecent", () => {
+  it("orders runs newest-first and respects the limit", async () => {
+    // startRun stamps started_at from the wall clock, so three calls made back
+    // to back could land in the same unix second; pin distinct values via a
+    // direct update afterwards so the ordering assertion cannot flake.
+    const baseSeconds = Math.floor(Date.now() / 1000);
+    const firstId = await repo.startRun(accountId, "schedule");
+    db.update(run).set({ startedAt: baseSeconds }).where(eq(run.id, firstId)).run();
+    await repo.finishRun(firstId, {
+      outcome: "success",
+      invoicesSeen: 1,
+      documentsStored: 1,
+      errorMessage: null,
+    });
+    const secondId = await repo.startRun(accountId, "manual");
+    db.update(run)
+      .set({ startedAt: baseSeconds + 1 })
+      .where(eq(run.id, secondId))
+      .run();
+    await repo.finishRun(secondId, {
+      outcome: "success",
+      invoicesSeen: 2,
+      documentsStored: 2,
+      errorMessage: null,
+    });
+    const thirdId = await repo.startRun(accountId, "schedule");
+    db.update(run)
+      .set({ startedAt: baseSeconds + 2 })
+      .where(eq(run.id, thirdId))
+      .run();
+    await repo.finishRun(thirdId, {
+      outcome: "failed",
+      invoicesSeen: 0,
+      documentsStored: 0,
+      errorMessage: "portal down",
+    });
+
+    const all = await repo.listRecent(10);
+    expect(all.map((item) => item.id)).toEqual([thirdId, secondId, firstId]);
+    expect(all[0]?.accountLabel).toBe("Privat");
+
+    const limited = await repo.listRecent(2);
+    expect(limited.map((item) => item.id)).toEqual([thirdId, secondId]);
+  });
+
+  it("returns accountLabel null once the account has been deleted", async () => {
+    const runId = await repo.startRun(accountId, "manual");
+    await repo.finishRun(runId, {
+      outcome: "success",
+      invoicesSeen: 1,
+      documentsStored: 1,
+      errorMessage: null,
+    });
+
+    db.delete(account).where(eq(account.id, accountId)).run();
+
+    const items = await repo.listRecent(10);
+    expect(items).toHaveLength(1);
+    expect(items[0]?.accountId).toBeNull();
+    expect(items[0]?.accountLabel).toBeNull();
+  });
+});
+
+describe("DrizzleRunRepository.findRun", () => {
+  it("finds an existing run with the same projection as listRecent", async () => {
+    const runId = await repo.startRun(accountId, "manual");
+    await repo.finishRun(runId, {
+      outcome: "partial",
+      invoicesSeen: 4,
+      documentsStored: 2,
+      errorMessage: null,
+    });
+
+    const found = await repo.findRun(runId);
+    expect(found?.id).toBe(runId);
+    expect(found?.accountId).toBe(accountId);
+    expect(found?.accountLabel).toBe("Privat");
+    expect(found?.trigger).toBe("manual");
+    expect(found?.outcome).toBe("partial");
+    expect(found?.invoicesSeen).toBe(4);
+    expect(found?.documentsStored).toBe(2);
+  });
+
+  it("returns undefined for an unknown id", async () => {
+    await expect(repo.findRun(999999)).resolves.toBeUndefined();
+  });
 });

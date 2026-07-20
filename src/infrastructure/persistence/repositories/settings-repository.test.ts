@@ -72,3 +72,47 @@ describe("DrizzleSettingsRepository.syncSchedule", () => {
     await expect(repo.syncSchedule()).rejects.toBeInstanceOf(ConfigError);
   });
 });
+
+describe("DrizzleSettingsRepository.setFilenameTemplate", () => {
+  it("round-trips a valid template through filenameTemplate", async () => {
+    await repo.setFilenameTemplate("{invoice_number}.pdf");
+    await expect(repo.filenameTemplate()).resolves.toBe("{invoice_number}.pdf");
+  });
+
+  it("throws TemplateError for a template with unknown placeholders", async () => {
+    await expect(repo.setFilenameTemplate("{bogus}.pdf")).rejects.toBeInstanceOf(TemplateError);
+  });
+
+  it("does not persist a value rejected by validation", async () => {
+    await expect(repo.setFilenameTemplate("{bogus}.pdf")).rejects.toBeInstanceOf(TemplateError);
+    await expect(repo.filenameTemplate()).resolves.toBe(DEFAULT_FILENAME_TEMPLATE);
+  });
+
+  it("overwrites a previously stored template (upsert)", async () => {
+    await repo.setFilenameTemplate("{invoice_number}.pdf");
+    await repo.setFilenameTemplate("{year}/{invoice_number}.pdf");
+    await expect(repo.filenameTemplate()).resolves.toBe("{year}/{invoice_number}.pdf");
+  });
+});
+
+describe("DrizzleSettingsRepository.setSyncSchedule", () => {
+  it("round-trips a valid cron expression through syncSchedule", async () => {
+    await repo.setSyncSchedule("0 7 * * 1");
+    await expect(repo.syncSchedule()).resolves.toBe("0 7 * * 1");
+  });
+
+  it("throws ConfigError for an invalid cron expression", async () => {
+    await expect(repo.setSyncSchedule("not a cron")).rejects.toBeInstanceOf(ConfigError);
+  });
+
+  it("does not persist a value rejected by validation", async () => {
+    await expect(repo.setSyncSchedule("not a cron")).rejects.toBeInstanceOf(ConfigError);
+    await expect(repo.syncSchedule()).resolves.toBe(DEFAULT_SYNC_SCHEDULE);
+  });
+
+  it("overwrites a previously stored schedule (upsert)", async () => {
+    await repo.setSyncSchedule("0 7 * * 1");
+    await repo.setSyncSchedule("0 8 * * 2");
+    await expect(repo.syncSchedule()).resolves.toBe("0 8 * * 2");
+  });
+});

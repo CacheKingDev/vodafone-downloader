@@ -1,6 +1,8 @@
 node_modules/
 dist/
 coverage/
+public/htmx.min.js
+public/pico.css
 *.log
 
 # Laufzeitdaten – dürfen niemals ins Repo

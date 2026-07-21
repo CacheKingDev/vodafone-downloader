@@ -54,7 +54,7 @@ export function registerInvoiceRoutes(app: FastifyInstance, options: InvoiceRout
 
     reply
       .type("application/pdf")
-      .header("Content-Disposition", `attachment; filename="${basename(document.relativePath)}"`);
+      .header("Content-Disposition", `inline; filename="${basename(document.relativePath)}"`);
     return reply.send(bytes);
   });
 }

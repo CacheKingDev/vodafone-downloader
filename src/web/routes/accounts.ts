@@ -201,7 +201,9 @@ export function registerAccountsRoutes(app: FastifyInstance, options: AccountsRo
           : accountRow(
               updated,
               reply.generateCsrf(),
-              run ? "Test erfolgreich" : "Test fehlgeschlagen",
+              run
+                ? { kind: "success", text: "Test erfolgreich" }
+                : { kind: "error", text: "Test fehlgeschlagen" },
             ),
       );
     });
@@ -214,7 +216,12 @@ export function registerAccountsRoutes(app: FastifyInstance, options: AccountsRo
       await renewSession(id);
       const updated = (await options.accounts.listAll()).find((candidate) => candidate.id === id);
       return reply.send(
-        updated === undefined ? "" : accountRow(updated, reply.generateCsrf(), "Session erneuert"),
+        updated === undefined
+          ? ""
+          : accountRow(updated, reply.generateCsrf(), {
+              kind: "success",
+              text: "Session erneuert",
+            }),
       );
     });
   }

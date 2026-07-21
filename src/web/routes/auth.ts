@@ -27,33 +27,41 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
     });
   });
 
-  app.post<{ Body: { password?: string } }>("/login", async (request, reply) => {
-    const password = request.body.password ?? "";
-    const activeHash = await resolveAdminPasswordHash(
-      options.settings,
-      options.defaultPasswordHash,
-    );
-    if (!verifyAdminPassword(password, activeHash)) {
-      const csrfToken = reply.generateCsrf();
-      return sendPage(request, reply, {
-        title: "Login",
-        body: loginPage(csrfToken),
-        csrfToken,
-        authenticated: false,
-        flash: { kind: "error", text: "Passwort ist nicht korrekt." },
-      });
-    }
+  app.post<{ Body: { password?: string } }>(
+    "/login",
+    // Brute-force guard: the rate-limit plugin is registered with `global:
+    // false`, so it does nothing unless a route opts in like this — the
+    // single shared admin password has no other defense against a scripted
+    // guesser working through the same IP.
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const password = request.body.password ?? "";
+      const activeHash = await resolveAdminPasswordHash(
+        options.settings,
+        options.defaultPasswordHash,
+      );
+      if (!verifyAdminPassword(password, activeHash)) {
+        const csrfToken = reply.generateCsrf();
+        return sendPage(request, reply, {
+          title: "Login",
+          body: loginPage(csrfToken),
+          csrfToken,
+          authenticated: false,
+          flash: { kind: "error", text: "Passwort ist nicht korrekt." },
+        });
+      }
 
-    const session = options.sessions.create();
-    reply.setCookie("session", session.token, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: options.secureCookie,
-      expires: new Date(session.expiresAt * 1000),
-    });
-    return reply.redirect("/dashboard");
-  });
+      const session = options.sessions.create();
+      reply.setCookie("session", session.token, {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: options.secureCookie,
+        expires: new Date(session.expiresAt * 1000),
+      });
+      return reply.redirect("/dashboard");
+    },
+  );
 
   app.post("/logout", async (request, reply) => {
     options.sessions.delete(request.cookies.session);

@@ -73,39 +73,45 @@ export function registerSettingsRoutes(app: FastifyInstance, options: SettingsRo
   if (sessions !== undefined && defaultPasswordHash !== undefined) {
     app.post<{
       Body: { currentPassword?: string; newPassword?: string; newPasswordConfirm?: string };
-    }>("/settings/admin-password", async (request, reply) => {
-      const currentPassword = request.body.currentPassword ?? "";
-      const newPassword = request.body.newPassword ?? "";
-      const newPasswordConfirm = request.body.newPasswordConfirm ?? "";
+    }>(
+      "/settings/admin-password",
+      // Same brute-force guard as POST /login: this route also verifies the
+      // admin password, so it needs the same throttle against guessing.
+      { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+      async (request, reply) => {
+        const currentPassword = request.body.currentPassword ?? "";
+        const newPassword = request.body.newPassword ?? "";
+        const newPasswordConfirm = request.body.newPasswordConfirm ?? "";
 
-      const activeHash = await resolveAdminPasswordHash(options.settings, defaultPasswordHash);
-      if (!verifyAdminPassword(currentPassword, activeHash)) {
-        return sendSettingsPage(request, reply, options, {
-          kind: "error",
-          text: "Aktuelles Passwort ist falsch.",
-        });
-      }
-      if (newPassword.length === 0) {
-        return sendSettingsPage(request, reply, options, {
-          kind: "error",
-          text: "Neues Passwort darf nicht leer sein.",
-        });
-      }
-      if (newPassword !== newPasswordConfirm) {
-        return sendSettingsPage(request, reply, options, {
-          kind: "error",
-          text: "Neue Passwörter stimmen nicht überein.",
-        });
-      }
+        const activeHash = await resolveAdminPasswordHash(options.settings, defaultPasswordHash);
+        if (!verifyAdminPassword(currentPassword, activeHash)) {
+          return sendSettingsPage(request, reply, options, {
+            kind: "error",
+            text: "Aktuelles Passwort ist falsch.",
+          });
+        }
+        if (newPassword.length === 0) {
+          return sendSettingsPage(request, reply, options, {
+            kind: "error",
+            text: "Neues Passwort darf nicht leer sein.",
+          });
+        }
+        if (newPassword !== newPasswordConfirm) {
+          return sendSettingsPage(request, reply, options, {
+            kind: "error",
+            text: "Neue Passwörter stimmen nicht überein.",
+          });
+        }
 
-      await options.settings.setAdminPasswordHash(hashAdminPassword(newPassword).toString("hex"));
-      sessions.deleteAllExcept(request.cookies.session);
+        await options.settings.setAdminPasswordHash(hashAdminPassword(newPassword).toString("hex"));
+        sessions.deleteAllExcept(request.cookies.session);
 
-      return sendSettingsPage(request, reply, options, {
-        kind: "success",
-        text: "Admin-Passwort wurde geändert.",
-      });
-    });
+        return sendSettingsPage(request, reply, options, {
+          kind: "success",
+          text: "Admin-Passwort wurde geändert.",
+        });
+      },
+    );
   }
 }
 

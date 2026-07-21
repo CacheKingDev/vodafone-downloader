@@ -41,6 +41,10 @@ export function registerAccountsRoutes(app: FastifyInstance, options: AccountsRo
 
   app.post<{ Body: { label?: string; username?: string; password?: string } }>(
     "/accounts/discover",
+    // Throttled like the admin login: this route submits attacker-suppliable
+    // credentials to Vodafone's own login, so without a limit it doubles as
+    // an unthrottled password-spraying proxy against an external service.
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
     async (request, reply) => {
       const { label, username, password } = request.body;
       if (!label || !username || !password) {

@@ -172,7 +172,7 @@ export async function createApplication(
     },
     passwordHash: hashAdminPassword(config.adminPassword),
     sessions,
-    secureCookie: config.nodeEnv === "production",
+    secureCookie: config.secureCookies,
     getFileStorage: () => resolveDefaultFileStorage(storageTargets, config.downloadsDir),
     buildFileStorage: buildStorage,
     storageTargets,

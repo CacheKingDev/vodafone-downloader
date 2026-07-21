@@ -14,6 +14,16 @@ const envSchema = z.object({
     .string()
     .regex(/^[0-9a-fA-F]{64}$/, "must be 64 hexadecimal characters (32 bytes)")
     .optional(),
+  // Defaults to false rather than following NODE_ENV: the Docker image always
+  // sets NODE_ENV=production, but most installs (e.g. a bare Unraid/LAN
+  // deployment with no reverse proxy) are reached over plain HTTP, where a
+  // Secure-flagged cookie is silently dropped by the browser and breaks both
+  // login sessions and CSRF protection. Only set this once TLS is actually
+  // terminated in front of the app.
+  SECURE_COOKIES: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
@@ -27,6 +37,7 @@ export interface AppConfig {
   readonly logLevel: LogLevel;
   readonly adminPassword: string;
   readonly encryptionKey: string | undefined;
+  readonly secureCookies: boolean;
 }
 
 /**
@@ -54,5 +65,6 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     logLevel: env.LOG_LEVEL,
     adminPassword: env.ADMIN_PASSWORD,
     encryptionKey: env.ENCRYPTION_KEY,
+    secureCookies: env.SECURE_COOKIES,
   };
 }

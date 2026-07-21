@@ -55,6 +55,9 @@ ENV HOST=0.0.0.0 \
     DOWNLOADS_DIR=/downloads
 # ADMIN_PASSWORD has no default and is required — the app refuses to start
 # without it (see src/config/env.ts). Set it via `docker run -e` or compose.
+# SECURE_COOKIES defaults to false — only set to "true" once a reverse proxy
+# in front of this container actually terminates TLS. Enabling it without TLS
+# makes the browser silently drop the session/CSRF cookies, breaking login.
 
 EXPOSE 8080
 VOLUME ["/config", "/downloads"]

@@ -718,9 +718,9 @@ tbody tr:last-child td {
   box-shadow: var(--vid-shadow);
   inset: auto;
   margin: 0;
-  max-width: 22rem;
   padding: 0.75rem 0.9rem;
   position: fixed;
+  width: 22rem;
 }
 
 .help-popover:popover-open {

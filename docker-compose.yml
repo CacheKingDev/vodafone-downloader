@@ -11,8 +11,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Required — the app refuses to start without it.
-      ADMIN_PASSWORD: "admin"
+      NODE_ENV: "production"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      # Keep enough of the 1 GiB container limit available for Chromium.
+      NODE_OPTIONS: "--max-old-space-size=256"
+      # Required. Put ADMIN_PASSWORD in a local .env file or export it before
+      # starting Compose; no insecure password is baked into this file.
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
       # Optional: pin the encryption key across recreations (64 hex chars /
       # 32 bytes). Without it, a key is generated once into CONFIG_DIR and
       # reused from there — fine as long as the /config volume persists.

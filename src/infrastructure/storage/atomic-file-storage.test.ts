@@ -78,4 +78,36 @@ describe("AtomicFileStorage", () => {
     await expect(storage.store(".tmp/rechnung.pdf", bytes)).rejects.toThrow(/".tmp" is reserved/);
     await expect(storage.store("foo/.tmp/bar.pdf", bytes)).rejects.toThrow(/".tmp" is reserved/);
   });
+
+  it("retrieves previously stored bytes", async () => {
+    await storage.store("a/r.pdf", bytes);
+    await expect(storage.retrieve("a/r.pdf")).resolves.toEqual(bytes);
+  });
+
+  it("rejects retrieving a path that does not exist", async () => {
+    await expect(storage.retrieve("missing.pdf")).rejects.toBeInstanceOf(StorageError);
+  });
+
+  it("rejects retrieving an absolute path", async () => {
+    await expect(storage.retrieve("/etc/passwd")).rejects.toBeInstanceOf(StorageError);
+  });
+
+  it("removes a stored file", async () => {
+    await storage.store("a/r.pdf", bytes);
+    await storage.remove("a/r.pdf");
+    expect(existsSync(join(root, "a", "r.pdf"))).toBe(false);
+  });
+
+  it("does not throw when removing a file that does not exist", async () => {
+    await expect(storage.remove("never-existed.pdf")).resolves.toBeUndefined();
+  });
+
+  it("rejects removing an absolute path", async () => {
+    await expect(storage.remove("/etc/passwd")).rejects.toBeInstanceOf(StorageError);
+  });
+
+  it("testConnection succeeds and leaves no marker behind", async () => {
+    await storage.testConnection();
+    expect(existsSync(join(root, ".storage-test"))).toBe(false);
+  });
 });

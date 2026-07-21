@@ -1,9 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
-import { mkdir, open, rename, rm } from "node:fs/promises";
+import { constants, existsSync } from "node:fs";
+import { access, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import type { ConnectionTestResult } from "../../domain/connection-test.js";
 import { StorageError } from "../../domain/errors.js";
 import type { FileStorage, StoredFile } from "../../domain/ports/file-storage.js";
+import { runConnectionTestSteps } from "./connection-test-runner.js";
 
 /** Reserved Windows device names — any segment matching these is rejected. */
 const RESERVED_NAMES = new Set([
@@ -33,6 +35,7 @@ const RESERVED_NAMES = new Set([
 
 /** Characters in the range U+007F (DEL) and U+0080…U+009F (C1 control). */
 const CONTROL_RANGE = /[-]/g;
+const CONNECTION_TEST_MARKER = ".storage-test/marker.tmp";
 
 /**
  * Strips DEL/C1 control characters from a filename segment so the resulting
@@ -78,22 +81,7 @@ export class AtomicFileStorage implements FileStorage {
   }
 
   async store(relativePath: string, bytes: Buffer): Promise<StoredFile> {
-    if (isAbsolute(relativePath)) {
-      throw new StorageError(`Refusing absolute path: ${relativePath}`);
-    }
-
-    // Sanitize invisible control characters so filenames are portable.
-    const sanitized = relativePath.split(sep).map(sanitizeFileName).join(sep);
-    if (sanitized !== relativePath) {
-      relativePath = sanitized;
-    }
-
-    validateReservedName(relativePath);
-
-    const target = resolve(this.#root, relativePath);
-    if (!target.startsWith(this.#root + sep)) {
-      throw new StorageError(`Path escapes the downloads root: ${relativePath}`);
-    }
+    const target = this.#resolveSafe(relativePath);
     const finalPath = this.resolveCollision(target);
 
     const tmpDir = join(this.#root, ".tmp");
@@ -121,6 +109,98 @@ export class AtomicFileStorage implements FileStorage {
       sha256: createHash("sha256").update(bytes).digest("hex"),
       sizeBytes: bytes.length,
     };
+  }
+
+  async retrieve(relativePath: string): Promise<Buffer> {
+    const target = this.#resolveSafe(relativePath);
+    try {
+      return await readFile(target);
+    } catch (cause) {
+      throw new StorageError(`Failed to read ${relativePath}`, { cause });
+    }
+  }
+
+  async remove(relativePath: string): Promise<void> {
+    const target = this.#resolveSafe(relativePath);
+    try {
+      await rm(target, { force: true });
+    } catch (cause) {
+      throw new StorageError(`Failed to remove ${relativePath}`, { cause });
+    }
+  }
+
+  async testConnection(): Promise<ConnectionTestResult> {
+    return runConnectionTestSteps([
+      { id: "path_exists", run: () => access(this.#root, constants.F_OK) },
+      {
+        id: "read_access",
+        run: async () => {
+          if (!(await this.checkReadAccess())) throw new Error("Der Zielordner ist nicht lesbar.");
+        },
+      },
+      {
+        id: "write_access",
+        run: async () => {
+          if (!(await this.checkWriteAccess())) {
+            throw new Error("Der Zielordner ist nicht beschreibbar.");
+          }
+        },
+      },
+      {
+        id: "create_test_file",
+        run: async () => {
+          const written = await this.store(CONNECTION_TEST_MARKER, Buffer.from("ok"));
+          const bytes = await this.retrieve(written.relativePath);
+          if (!bytes.equals(Buffer.from("ok"))) {
+            throw new Error("Testdatei enthielt nach dem Schreiben unerwartete Daten.");
+          }
+        },
+      },
+      {
+        id: "delete_test_file",
+        run: async () => {
+          await this.remove(CONNECTION_TEST_MARKER);
+          await rm(join(this.#root, ".storage-test"), { recursive: true, force: true });
+        },
+      },
+    ]);
+  }
+
+  async checkReadAccess(): Promise<boolean> {
+    try {
+      await access(this.#root, constants.R_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async checkWriteAccess(): Promise<boolean> {
+    try {
+      await access(this.#root, constants.W_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async createDirectory(): Promise<void> {
+    await mkdir(this.#root, { recursive: true });
+  }
+
+  #resolveSafe(relativePath: string): string {
+    if (isAbsolute(relativePath)) {
+      throw new StorageError(`Refusing absolute path: ${relativePath}`);
+    }
+
+    const sanitized = relativePath.split(sep).map(sanitizeFileName).join(sep);
+    validateReservedName(sanitized);
+
+    const target = resolve(this.#root, sanitized);
+    if (!target.startsWith(this.#root + sep)) {
+      throw new StorageError(`Path escapes the downloads root: ${relativePath}`);
+    }
+    return target;
   }
 
   private resolveCollision(target: string): string {

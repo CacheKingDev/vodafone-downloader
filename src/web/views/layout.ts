@@ -35,10 +35,14 @@ export function layout({
     authenticated
       ? `<header>
     <div class="container top-nav">
-      <strong>Vodafone Downloader</strong>
+      <a class="brand" href="/dashboard" aria-label="Vodafone Downloader Dashboard">
+        <span class="brand-mark">V</span>
+        <span>Vodafone Downloader</span>
+      </a>
       <nav hx-headers='${csrfHeader}'>
         <a href="/dashboard">Dashboard</a>
         <a href="/accounts">Konten</a>
+        <a href="/storage">Speicher</a>
         <a href="/invoices">Rechnungen</a>
         <a href="/runs">Läufe</a>
         <a href="/settings">Settings</a>
@@ -59,6 +63,7 @@ export function layout({
   </main>
   <script src="/public/htmx.min.js"></script>
   <script src="/public/theme-toggle.js"></script>
+  ${authenticated ? '<script src="/public/nav-active.js"></script><script src="/public/storage-wizard.js"></script><script src="/public/row-note.js"></script>' : ""}
 </body>
 </html>`;
 }

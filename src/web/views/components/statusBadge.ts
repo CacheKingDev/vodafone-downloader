@@ -9,6 +9,14 @@ const LABELS = {
   failed: "Fehlgeschlagen",
   pending: "Ausstehend",
   stored: "Gespeichert",
+  draft: "Entwurf",
+  untested: "Nicht getestet",
+  testing: "Test läuft…",
+  connected: "Verbunden",
+  disabled: "Deaktiviert",
+  migration_pending: "Migration geplant",
+  migrating: "Migration läuft…",
+  migration_failed: "Migration fehlgeschlagen",
 };
 
 export function statusBadge(status: keyof typeof LABELS): string {

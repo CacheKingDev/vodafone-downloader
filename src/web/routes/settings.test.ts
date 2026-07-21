@@ -124,6 +124,84 @@ describe("GET /settings", () => {
     expect(response.body).toContain('value="{account_label}/{invoice_number}.pdf"');
     expect(response.body).toContain('value="0 7 * * *"');
   });
+
+  it("wires the filename template input to the live preview endpoint", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({ method: "GET", url: "/settings" });
+
+    expect(response.body).toContain('hx-get="/settings/preview"');
+    expect(response.body).toContain('hx-trigger="input changed delay:300ms"');
+    expect(response.body).toContain('hx-target="#template-preview"');
+    expect(response.body).toContain('id="template-preview"');
+  });
+
+  it("shows the placeholder legend popover with all allowed placeholders", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({ method: "GET", url: "/settings" });
+
+    expect(response.body).toContain('popovertarget="template-help"');
+    expect(response.body).toContain('id="template-help" popover');
+    for (const placeholder of [
+      "account_label",
+      "invoice_number",
+      "year",
+      "month",
+      "day",
+      "issued_on",
+      "sub_type",
+      "contract_number",
+    ]) {
+      expect(response.body).toContain(`{${placeholder}}`);
+    }
+  });
+});
+
+describe("GET /settings/preview", () => {
+  it("renders the preview fragment for a valid template", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/settings/preview?filenameTemplate=%7Baccount_label%7D%2F%7Byear%7D.pdf",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe(
+      '<p id="template-preview" class="muted">Vorschau: Privat/2026.pdf</p>',
+    );
+  });
+
+  it("shows the invalid-template message for an unknown placeholder", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/settings/preview?filenameTemplate=%7Bunknown_placeholder%7D.pdf",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe(
+      '<p id="template-preview" class="muted">Vorschau: Ungültiges Template</p>',
+    );
+  });
+
+  it("treats a missing filenameTemplate query param as an empty (invalid) template", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({ method: "GET", url: "/settings/preview" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe(
+      '<p id="template-preview" class="muted">Vorschau: Ungültiges Template</p>',
+    );
+  });
 });
 
 describe("POST /settings", () => {

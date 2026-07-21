@@ -34,7 +34,7 @@
     "beforetoggle",
     function (event) {
       var popover = event.target;
-      if (!popover.matches || !popover.matches(".row-menu-panel") || event.newState !== "open") {
+      if (!popover.matches || !popover.matches(".row-menu-panel, .help-popover") || event.newState !== "open") {
         return;
       }
       var trigger = document.querySelector('[popovertarget="' + popover.id + '"]');
@@ -96,5 +96,18 @@
 
   document.querySelectorAll("[data-storage-form]").forEach(function (form) {
     syncSaveGate(form);
+  });
+
+  // Zeigt aria-busy + Ersatztext auf dem Submit-Button, solange ein normales
+  // (Nicht-htmx) Formular auf die Server-Antwort wartet - z.B. beim
+  // Vodafone-Login in "Konto hinzufügen", der bis zu 30s dauern kann.
+  document.body.addEventListener("submit", function (event) {
+    var form = event.target;
+    if (form.hasAttribute("hx-post") || form.hasAttribute("hx-get")) return;
+    var button = form.querySelector("button[data-busy-text]");
+    if (button === null) return;
+    button.setAttribute("aria-busy", "true");
+    button.disabled = true;
+    button.textContent = button.dataset.busyText;
   });
 })();

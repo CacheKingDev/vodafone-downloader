@@ -17,7 +17,7 @@ export function newAccountForm(
     <input type="text" id="username" name="username" required value="${escapeHtml(values?.username ?? "")}">
     <label for="password">Vodafone-Passwort</label>
     <input type="password" id="password" name="password" required>
-    <button type="submit">Anmelden und Konten suchen</button>
+    <button type="submit" data-busy-text="Anmeldung läuft…">Anmelden und Konten suchen</button>
   </form>
 </section>`;
 }

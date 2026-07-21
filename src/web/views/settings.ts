@@ -14,8 +14,10 @@ export function settingsPage(data: {
   <form method="post" action="/settings">
     <label for="filenameTemplate">Dateinamen-Template</label>
     <input type="hidden" name="_csrf" value="${escapeHtml(data.csrfToken)}">
-    <input id="filenameTemplate" name="filenameTemplate" value="${escapeHtml(data.filenameTemplate)}" required>
-    <p class="muted">Vorschau: ${escapeHtml(data.preview)}</p>
+    <input id="filenameTemplate" name="filenameTemplate" value="${escapeHtml(data.filenameTemplate)}" required
+           hx-get="/settings/preview" hx-trigger="input changed delay:300ms"
+           hx-target="#template-preview" hx-swap="outerHTML" hx-include="this">
+    <p id="template-preview" class="muted">Vorschau: ${escapeHtml(data.preview)}</p>
     <label for="preset">Zeitplan</label>
     <select id="preset" name="preset">
       <option value="">Erweitert</option>

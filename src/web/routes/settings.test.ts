@@ -124,6 +124,18 @@ describe("GET /settings", () => {
     expect(response.body).toContain('value="{account_label}/{invoice_number}.pdf"');
     expect(response.body).toContain('value="0 7 * * *"');
   });
+
+  it("wires the filename template input to the live preview endpoint", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({ method: "GET", url: "/settings" });
+
+    expect(response.body).toContain('hx-get="/settings/preview"');
+    expect(response.body).toContain('hx-trigger="input changed delay:300ms"');
+    expect(response.body).toContain('hx-target="#template-preview"');
+    expect(response.body).toContain('id="template-preview"');
+  });
 });
 
 describe("GET /settings/preview", () => {

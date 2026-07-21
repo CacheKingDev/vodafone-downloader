@@ -89,6 +89,13 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
         frameAncestors: ["'none'"],
         objectSrc: ["'none'"],
         baseUri: ["'none'"],
+        // helmet injects this by default. The app has no built-in TLS and is
+        // commonly reached directly over plain HTTP (e.g. a LAN/Unraid
+        // install without a reverse proxy) — with the directive present,
+        // browsers try to upgrade every subresource fetch (CSS/JS) to https
+        // on the same port, which doesn't speak TLS, so assets silently fail
+        // to load and the page renders unstyled.
+        upgradeInsecureRequests: null,
       },
     },
   });

@@ -1,6 +1,8 @@
 {
   "name": "vodafone-invoice-downloader",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Lädt automatisch Rechnungen aus dem MeinVodafone-Kundenportal herunter und legt sie lokal oder auf einem Netzwerkspeicher ab.",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "engines": {

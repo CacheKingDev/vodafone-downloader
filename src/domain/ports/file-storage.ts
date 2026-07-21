@@ -1,3 +1,5 @@
+import type { ConnectionTestResult } from "../connection-test.js";
+
 /** Result of a completed store: the path actually used (after collision
  * resolution), plus integrity metadata for persistence. */
 export interface StoredFile {
@@ -13,6 +15,22 @@ export interface FileStorage {
    * used is returned.
    */
   store(relativePath: string, bytes: Buffer): Promise<StoredFile>;
+  /** Reads bytes back. Throws StorageError if the path does not exist or is unreachable. */
+  retrieve(relativePath: string): Promise<Buffer>;
+  /** Deletes the file. A missing file is not an error. */
+  remove(relativePath: string): Promise<void>;
+  /**
+   * Verifies the backend step by step (host/auth/path/read/write, spec
+   * section 9) and reports each step individually — never throws for an
+   * ordinary connectivity/auth/permission failure, only for programmer error.
+   */
+  testConnection(): Promise<ConnectionTestResult>;
+  /** Whether the configured root path can be listed/read. */
+  checkReadAccess(): Promise<boolean>;
+  /** Whether a file can be created below the configured root path. */
+  checkWriteAccess(): Promise<boolean>;
+  /** Creates the configured root path if it does not exist yet. */
+  createDirectory(): Promise<void>;
 }
 
 /** Everything the filename template may reference for one document. */

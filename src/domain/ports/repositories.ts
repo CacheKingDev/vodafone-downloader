@@ -1,5 +1,12 @@
 import type { Account, AccountStatus } from "../account.js";
 import type { Invoice } from "../invoice.js";
+import type {
+  CreateStorageTargetInput,
+  StorageTarget,
+  StorageTargetStatus,
+  StorageTargetSummary,
+  UpdateStorageTargetInput,
+} from "../storage-target.js";
 import type { AuthSession } from "../vodafone-session.js";
 import type { StoredFile } from "./file-storage.js";
 
@@ -133,6 +140,75 @@ export interface SettingsRepository {
   syncSchedule(): Promise<string>;
 }
 
+export interface StoredDocumentRecord {
+  readonly id: number;
+  readonly relativePath: string;
+  readonly sha256: string;
+}
+
+export type MigrationStatus = "running" | "completed" | "failed";
+
+/**
+ * "migrate" transfers existing documents to the new default target in the
+ * background (spec section 12); "new_only" switches the default immediately
+ * and leaves prior documents where they are.
+ */
+export type StorageMigrationMode = "migrate" | "new_only";
+
+export interface StorageMigrationRecord {
+  readonly id: number;
+  readonly fromTargetId: number;
+  readonly toTargetId: number;
+  readonly mode: StorageMigrationMode;
+  readonly status: MigrationStatus;
+  readonly totalDocuments: number;
+  readonly migratedDocuments: number;
+  readonly failedDocuments: number;
+  readonly startedAt: number;
+  readonly finishedAt: number | null;
+  readonly errorMessage: string | null;
+}
+
+export interface CreateMigrationInput {
+  readonly fromTargetId: number;
+  readonly toTargetId: number;
+  readonly mode: StorageMigrationMode;
+  readonly totalDocuments: number;
+}
+
+export interface MigrationRepository {
+  listStoredDocuments(): Promise<StoredDocumentRecord[]>;
+  createMigration(input: CreateMigrationInput): Promise<number>;
+  findRunningMigration(): Promise<StorageMigrationRecord | undefined>;
+  findMigration(id: number): Promise<StorageMigrationRecord | undefined>;
+  incrementProgress(id: number, outcome: "migrated" | "failed"): Promise<void>;
+  setTotalDocuments(id: number, total: number): Promise<void>;
+  completeMigration(id: number): Promise<void>;
+  failMigration(id: number, message: string): Promise<void>;
+}
+
+/** Narrow read path used by sync and downloads — resolving the active target's config. */
+export interface StorageTargetRepository {
+  findDefault(): Promise<StorageTarget | undefined>;
+}
+
+export interface StorageTargetUiRepository extends StorageTargetRepository {
+  list(): Promise<StorageTargetSummary[]>;
+  findById(id: number): Promise<StorageTarget | undefined>;
+  nameExists(name: string, excludingId?: number): Promise<boolean>;
+  create(input: CreateStorageTargetInput): Promise<number>;
+  update(id: number, input: UpdateStorageTargetInput): Promise<void>;
+  setStatus(id: number, status: StorageTargetStatus): Promise<void>;
+  recordTestResult(
+    id: number,
+    result: { success: boolean; errorMessage: string | null },
+  ): Promise<void>;
+  /** Atomically clears is_default on every other row and sets it on this one. */
+  setDefault(id: number): Promise<void>;
+  setDisabled(id: number, disabled: boolean): Promise<void>;
+  delete(id: number): Promise<void>;
+}
+
 export interface AccountUiRepository extends AccountRepository {
   create(account: CreateAccountInput): Promise<number>;
   listAll(): Promise<AccountSummary[]>;
@@ -149,6 +225,9 @@ export interface InvoiceUiRepository extends InvoiceRepository {
 export interface SettingsUiRepository extends SettingsRepository {
   setFilenameTemplate(template: string): Promise<void>;
   setSyncSchedule(schedule: string): Promise<void>;
+  /** Hex-encoded override hash, or null if the admin password was never changed from its default. */
+  adminPasswordHash(): Promise<string | null>;
+  setAdminPasswordHash(hashHex: string): Promise<void>;
 }
 
 export interface RunUiRepository extends RunRepository {

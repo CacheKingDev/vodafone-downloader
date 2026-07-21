@@ -70,6 +70,12 @@ describe("GET /accounts/new", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain('name="username"');
   });
+
+  it("marks the submit button with a busy-state label for the login step", async () => {
+    ({ app } = await buildTestApp(async () => []));
+    const response = await app.inject({ method: "GET", url: "/accounts/new" });
+    expect(response.body).toContain('data-busy-text="Anmeldung läuft…"');
+  });
 });
 
 describe("POST /accounts/discover", () => {

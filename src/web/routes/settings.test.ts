@@ -171,7 +171,9 @@ describe("GET /settings/preview", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toBe('<p id="template-preview" class="muted">Vorschau: Privat/2026.pdf</p>');
+    expect(response.body).toBe(
+      '<p id="template-preview" class="muted">Vorschau: Privat/2026.pdf</p>',
+    );
   });
 
   it("shows the invalid-template message for an unknown placeholder", async () => {

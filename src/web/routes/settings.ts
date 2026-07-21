@@ -43,11 +43,14 @@ export function registerSettingsRoutes(app: FastifyInstance, options: SettingsRo
     });
   });
 
-  app.get<{ Querystring: { filenameTemplate?: string } }>("/settings/preview", async (request, reply) => {
-    const preview = previewFilename(request.query.filenameTemplate ?? "");
-    reply.type("text/html");
-    return `<p id="template-preview" class="muted">Vorschau: ${escapeHtml(preview)}</p>`;
-  });
+  app.get<{ Querystring: { filenameTemplate?: string } }>(
+    "/settings/preview",
+    async (request, reply) => {
+      const preview = previewFilename(request.query.filenameTemplate ?? "");
+      reply.type("text/html");
+      return `<p id="template-preview" class="muted">Vorschau: ${escapeHtml(preview)}</p>`;
+    },
+  );
 
   app.post<{ Body: { filenameTemplate?: string; syncSchedule?: string; preset?: string } }>(
     "/settings",

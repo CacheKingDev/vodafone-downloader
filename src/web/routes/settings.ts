@@ -8,6 +8,7 @@ import {
 import type { SessionStore } from "../../infrastructure/auth/session-store.js";
 import { renderFilename } from "../../infrastructure/storage/filename-template.js";
 import { sendPage } from "../render.js";
+import { escapeHtml } from "../views/escape.js";
 import { settingsPage } from "../views/settings.js";
 
 export interface SettingsRouteOptions {
@@ -40,6 +41,12 @@ export function registerSettingsRoutes(app: FastifyInstance, options: SettingsRo
       }),
       csrfToken,
     });
+  });
+
+  app.get<{ Querystring: { filenameTemplate?: string } }>("/settings/preview", async (request, reply) => {
+    const preview = previewFilename(request.query.filenameTemplate ?? "");
+    reply.type("text/html");
+    return `<p id="template-preview" class="muted">Vorschau: ${escapeHtml(preview)}</p>`;
   });
 
   app.post<{ Body: { filenameTemplate?: string; syncSchedule?: string; preset?: string } }>(

@@ -126,6 +126,48 @@ describe("GET /settings", () => {
   });
 });
 
+describe("GET /settings/preview", () => {
+  it("renders the preview fragment for a valid template", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/settings/preview?filenameTemplate=%7Baccount_label%7D%2F%7Byear%7D.pdf",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe('<p id="template-preview" class="muted">Vorschau: Privat/2026.pdf</p>');
+  });
+
+  it("shows the invalid-template message for an unknown placeholder", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/settings/preview?filenameTemplate=%7Bunknown_placeholder%7D.pdf",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe(
+      '<p id="template-preview" class="muted">Vorschau: Ungültiges Template</p>',
+    );
+  });
+
+  it("treats a missing filenameTemplate query param as an empty (invalid) template", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({ method: "GET", url: "/settings/preview" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe(
+      '<p id="template-preview" class="muted">Vorschau: Ungültiges Template</p>',
+    );
+  });
+});
+
 describe("POST /settings", () => {
   it("persists a valid template and schedule and redirects to /settings", async () => {
     const { app: testApp, settingsRepo } = await buildTestApp();

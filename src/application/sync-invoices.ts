@@ -27,6 +27,13 @@ export interface SyncReport {
   readonly errorMessage: string | null;
 }
 
+/** Structurally pino-compatible; keeps infrastructure out of this layer. */
+export interface SyncLogger {
+  info(context: object, message: string): void;
+  warn(context: object, message: string): void;
+  error(context: object, message: string): void;
+}
+
 export interface SyncDeps {
   readonly provider: VodafoneProvider;
   readonly accounts: AccountRepository;
@@ -35,6 +42,7 @@ export interface SyncDeps {
   readonly storage: FileStorage;
   readonly renderFilename: FilenameRenderer;
   readonly validatePdf: PdfValidator;
+  readonly logger: SyncLogger;
   readonly now?: () => number;
 }
 
@@ -64,13 +72,22 @@ export async function syncAccount(deps: SyncDeps, accountId: number): Promise<Sy
   });
 
   const account = await deps.accounts.findById(accountId);
-  if (account === undefined) return failed(`Account ${accountId} does not exist`);
-  if (!account.enabled) return failed(`Account "${account.label}" is disabled`);
+  if (account === undefined) {
+    deps.logger.warn({ accountId }, "sync skipped: account not found");
+    return failed(`Account ${accountId} does not exist`);
+  }
+  if (!account.enabled) {
+    deps.logger.warn({ accountId, label: account.label }, "sync skipped: account disabled");
+    return failed(`Account "${account.label}" is disabled`);
+  }
   if (account.status === "needs_action") {
+    deps.logger.warn({ accountId, label: account.label }, "sync skipped: account needs action");
     return failed(
       `Account "${account.label}" needs action; skipping to protect the portal account`,
     );
   }
+
+  deps.logger.info({ accountId, label: account.label }, "sync started");
 
   try {
     const session = await deps.provider.getSession(
@@ -122,13 +139,30 @@ export async function syncAccount(deps: SyncDeps, accountId: number): Promise<Sy
         }
         const message = error instanceof Error ? error.message : String(error);
         failures.push({ remoteDocumentId: doc.remoteDocumentId, message });
+        deps.logger.warn(
+          { accountId, remoteDocumentId: doc.remoteDocumentId, message },
+          "document download failed",
+        );
         await deps.invoices.markFailed(doc.id, message);
       }
     }
 
     await deps.accounts.setStatus(accountId, "ok");
+    const outcome = failures.length === 0 ? "success" : "partial";
+    deps.logger.info(
+      {
+        accountId,
+        label: account.label,
+        outcome,
+        invoicesSeen,
+        invoicesNew,
+        documentsStored,
+        failedCount: failures.length,
+      },
+      "sync finished",
+    );
     return {
-      outcome: failures.length === 0 ? "success" : "partial",
+      outcome,
       invoicesSeen,
       invoicesNew,
       documentsStored,
@@ -138,10 +172,18 @@ export async function syncAccount(deps: SyncDeps, accountId: number): Promise<Sy
   } catch (error) {
     if (error instanceof AuthenticationFailedError) {
       await deps.accounts.setStatus(accountId, "needs_action", error.message);
+      deps.logger.warn(
+        { accountId, label: account.label, err: error },
+        "sync failed: authentication rejected, account parked",
+      );
       return failed(error.message);
     }
     if (error instanceof PortalContractError) {
       await deps.accounts.setStatus(accountId, "error", error.message);
+      deps.logger.error(
+        { accountId, label: account.label, err: error },
+        "sync failed: portal contract changed",
+      );
       return failed(error.message);
     }
     if (
@@ -149,6 +191,10 @@ export async function syncAccount(deps: SyncDeps, accountId: number): Promise<Sy
       error instanceof TransientNetworkError ||
       error instanceof RateLimitedError
     ) {
+      deps.logger.warn(
+        { accountId, label: account.label, err: error },
+        "sync failed: transient error",
+      );
       return failed(error.message);
     }
     throw error;

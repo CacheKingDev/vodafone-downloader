@@ -17,6 +17,7 @@ import { DrizzleAccountRepository } from "../../infrastructure/persistence/repos
 import { DrizzleInvoiceRepository } from "../../infrastructure/persistence/repositories/invoice-repository.js";
 import { DrizzleRunRepository } from "../../infrastructure/persistence/repositories/run-repository.js";
 import { DrizzleSettingsRepository } from "../../infrastructure/persistence/repositories/settings-repository.js";
+import { AtomicFileStorage } from "../../infrastructure/storage/atomic-file-storage.js";
 import { buildServer } from "../server.js";
 
 let dir: string;
@@ -47,7 +48,7 @@ async function buildTestApp(nextRun: () => Date | null): Promise<{
     discoveryTokens: new DiscoveryTokenStore(),
     discoverAssets: async (_credentials: AccountCredentials): Promise<DiscoveredAsset[]> => [],
     runAccount: async () => undefined,
-    downloadsDir: join(dir, "downloads"),
+    getFileStorage: async () => new AtomicFileStorage(join(dir, "downloads")),
     nextRun,
   });
   return { app: testApp, accountsRepo, invoicesRepo, runsRepo };

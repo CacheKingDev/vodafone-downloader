@@ -1,10 +1,13 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
+import { StorageMigrationRunner } from "./application/migrate-storage.js";
 import { type RunAllResult, RunCoordinator, type RunSummary } from "./application/run-sync.js";
 import { type SyncReport, syncAccount } from "./application/sync-invoices.js";
 import { type AppConfig, loadConfig } from "./config/env.js";
+import type { FileStorage } from "./domain/ports/file-storage.js";
 import type { RunTrigger } from "./domain/ports/repositories.js";
+import type { StorageConfig } from "./domain/storage-config.js";
 import { hashAdminPassword } from "./infrastructure/auth/admin-auth.js";
 import { DiscoveryTokenStore } from "./infrastructure/auth/discovery-token-store.js";
 import { SessionStore } from "./infrastructure/auth/session-store.js";
@@ -18,12 +21,18 @@ import {
 } from "./infrastructure/persistence/database.js";
 import { DrizzleAccountRepository } from "./infrastructure/persistence/repositories/account-repository.js";
 import { DrizzleInvoiceRepository } from "./infrastructure/persistence/repositories/invoice-repository.js";
+import { DrizzleMigrationRepository } from "./infrastructure/persistence/repositories/migration-repository.js";
 import { DrizzleRunRepository } from "./infrastructure/persistence/repositories/run-repository.js";
 import { DrizzleSettingsRepository } from "./infrastructure/persistence/repositories/settings-repository.js";
+import { DrizzleStorageTargetRepository } from "./infrastructure/persistence/repositories/storage-target-repository.js";
 import { SyncScheduler } from "./infrastructure/scheduler/scheduler.js";
-import { AtomicFileStorage } from "./infrastructure/storage/atomic-file-storage.js";
+import { ensureInitialStorageTarget } from "./infrastructure/storage/bootstrap-storage-target.js";
 import { renderFilename } from "./infrastructure/storage/filename-template.js";
 import { validatePdf } from "./infrastructure/storage/pdf.js";
+import {
+  buildFileStorage,
+  resolveDefaultFileStorage,
+} from "./infrastructure/storage/resolve-file-storage.js";
 import { VodafoneApiClient } from "./infrastructure/vodafone/api-client.js";
 import { VodafoneAuthenticator } from "./infrastructure/vodafone/authenticator.js";
 import { VodafoneProviderFacade } from "./infrastructure/vodafone/provider.js";
@@ -75,7 +84,10 @@ export async function createApplication(
   const accounts = new DrizzleAccountRepository(db, cipher);
   const invoices = new DrizzleInvoiceRepository(db);
   const settings = new DrizzleSettingsRepository(db);
-  const storage = new AtomicFileStorage(config.downloadsDir);
+  const storageTargets = new DrizzleStorageTargetRepository(db, cipher);
+  await ensureInitialStorageTarget(db, cipher, storageTargets);
+  const buildStorage = (target: StorageConfig): FileStorage =>
+    buildFileStorage(target, config.downloadsDir);
   const sessions = new SessionStore(db);
   sessions.deleteExpired();
 
@@ -100,11 +112,13 @@ export async function createApplication(
     silentRenewalSupported: true,
   });
 
-  const sync = (accountId: number): Promise<SyncReport> =>
-    syncAccount(
-      { provider, accounts, invoices, settings, storage, renderFilename, validatePdf },
+  const sync = async (accountId: number): Promise<SyncReport> => {
+    const storage = await resolveDefaultFileStorage(storageTargets, config.downloadsDir);
+    return syncAccount(
+      { provider, accounts, invoices, settings, storage, renderFilename, validatePdf, logger },
       accountId,
     );
+  };
 
   const runs = new DrizzleRunRepository(db);
 
@@ -113,6 +127,20 @@ export async function createApplication(
   await runs.orphanCleanup(15 * 60 * 1000);
 
   const coordinator = new RunCoordinator({ accounts, runs, sync, logger });
+  const migrations = new DrizzleMigrationRepository(db);
+  const migrationRunner = new StorageMigrationRunner({
+    migrations,
+    targets: storageTargets,
+    buildFileStorage: buildStorage,
+    logger,
+  });
+
+  const runningMigration = await migrations.findRunningMigration();
+  if (runningMigration !== undefined) {
+    migrationRunner.run(runningMigration.id).catch((error: unknown) => {
+      logger.error({ err: error }, "storage migration resume failed");
+    });
+  }
 
   const scheduler = new SyncScheduler({
     schedule: await settings.syncSchedule(),
@@ -145,7 +173,15 @@ export async function createApplication(
     passwordHash: hashAdminPassword(config.adminPassword),
     sessions,
     secureCookie: config.nodeEnv === "production",
-    downloadsDir: config.downloadsDir,
+    getFileStorage: () => resolveDefaultFileStorage(storageTargets, config.downloadsDir),
+    buildFileStorage: buildStorage,
+    storageTargets,
+    migrations,
+    runStorageMigration: (migrationId) => {
+      migrationRunner.run(migrationId).catch((error: unknown) => {
+        logger.error({ err: error, migrationId }, "storage migration failed");
+      });
+    },
     logFile,
     nextRun: () => scheduler.nextSyncRun(),
   });

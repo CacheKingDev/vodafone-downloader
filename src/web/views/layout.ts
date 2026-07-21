@@ -27,6 +27,9 @@ export function layout({
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
+  <link rel="icon" href="/public/icons/favicon-v3.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-v3-32.png">
+  <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon-v3.png">
   <link rel="stylesheet" href="/public/pico.css">
   <link rel="stylesheet" href="/public/app.css">
 </head>
@@ -36,7 +39,7 @@ export function layout({
       ? `<header>
     <div class="container top-nav">
       <a class="brand" href="/dashboard" aria-label="Vodafone Downloader Dashboard">
-        <span class="brand-mark">V</span>
+        <img class="brand-mark" src="/public/icons/app-icon-v3-192.png" alt="" width="26" height="26">
         <span>Vodafone Downloader</span>
       </a>
       <nav hx-headers='${csrfHeader}'>

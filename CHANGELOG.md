@@ -1,22 +1,24 @@
 # Changelog
 
-Alle nennenswerten Änderungen an diesem Projekt werden hier dokumentiert.
-Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
-das Projekt an [Semantic Versioning](https://semver.org/lang/de/).
+*English | [Deutsch](CHANGELOG.de.md)*
+
+All notable changes to this project are documented here.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [1.0.0] - 2026-07-21
 
-Erster öffentlicher Release. Die Anwendung ist funktional vollständig für den produktiven Eigenbetrieb.
+First public release. The application is functionally complete for production self-hosting.
 
-### Hinzugefügt
+### Added
 
-- Automatischer Login und Rechnungs-Sync gegen das MeinVodafone-Kundenportal (Playwright-basiert, mit Session-Wiederverwendung)
-- Verwaltung mehrerer Vodafone-Konten
-- Geplante Läufe per Cron-Ausdruck sowie manueller Sofort-Lauf, mit Überlappungsschutz und Artefakt-Aufräumung
-- Speicherziele: lokal, SMB, FTP/FTPS, SFTP (Passwort oder Schlüssel) und WebDAV, inklusive Verbindungstest und Migration zwischen Zielen
-- Verschlüsselte Ablage von Kontopasswörtern und Speicherziel-Zugangsdaten (AES-256-GCM) in SQLite
-- Web-Oberfläche (Login, Dashboard, Konten, Rechnungen, Settings, Läufe, Logs) auf Basis von Fastify und htmx
-- Redownload einzelner Rechnungen bei fehlender lokaler Datei
-- Strukturiertes, rotierendes Logging (pino)
-- Docker-Image und Compose-Setup für den Produktivbetrieb
-- CI-Workflow (Lint, Typecheck, Tests, Migrations-Check) via GitHub Actions
+- Automatic login and invoice sync against the MeinVodafone customer portal (Playwright-based, with session reuse)
+- Management of multiple Vodafone accounts
+- Scheduled runs via cron expression, plus a manual on-demand run, with overlap protection and artifact cleanup
+- Storage targets: local, SMB, FTP/FTPS, SFTP (password or key), and WebDAV, including connection testing and migration between targets
+- Encrypted storage of account passwords and storage target credentials (AES-256-GCM) in SQLite
+- Web UI (login, dashboard, accounts, invoices, settings, runs, logs) built on Fastify and htmx
+- Redownload of individual invoices when the local file is missing
+- Structured, rotating logging (pino)
+- Docker image and Compose setup for production use
+- CI workflow (lint, typecheck, tests, migration check) via GitHub Actions

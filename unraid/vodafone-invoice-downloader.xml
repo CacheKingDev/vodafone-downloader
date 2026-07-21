@@ -29,5 +29,4 @@ Inoffizielles Projekt, nicht von Vodafone autorisiert.</Overview>
   <Config Name="Admin-Passwort" Target="ADMIN_PASSWORD" Default="" Mode="" Description="Passwort für den Login im Web-UI (Pflichtfeld)" Type="Variable" Display="always" Required="true" Mask="true"></Config>
   <Config Name="Encryption Key" Target="ENCRYPTION_KEY" Default="" Mode="" Description="Optional: 64 Hex-Zeichen (32 Byte) zur Verschlüsselung gespeicherter Zugangsdaten. Leer lassen, um automatisch einen Schlüssel im Config-Verzeichnis zu erzeugen." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
   <Config Name="Log Level" Target="LOG_LEVEL" Default="info" Mode="" Description="fatal, error, warn, info, debug, trace oder silent" Type="Variable" Display="advanced" Required="false" Mask="false">info</Config>
-  <Config Name="Secure Cookies" Target="SECURE_COOKIES" Default="false" Mode="" Description="Nur auf true setzen, wenn ein Reverse-Proxy davor TLS terminiert. Ohne HTTPS f&#252;hrt true zu einem fehlgeschlagenen Login (Browser verwirft die Cookies)." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
 </Container>

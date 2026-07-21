@@ -13,7 +13,6 @@ export interface AuthRouteOptions {
   readonly defaultPasswordHash: Buffer;
   readonly settings?: SettingsUiRepository;
   readonly sessions: SessionStore;
-  readonly secureCookie: boolean;
 }
 
 export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptions): void {
@@ -56,7 +55,7 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
         path: "/",
         httpOnly: true,
         sameSite: "lax",
-        secure: options.secureCookie,
+        secure: "auto",
         expires: new Date(session.expiresAt * 1000),
       });
       return reply.redirect("/dashboard");

@@ -52,7 +52,6 @@ export interface ServerDeps {
   readonly renewSession?: (accountId: number) => Promise<void>;
   readonly passwordHash?: Buffer;
   readonly sessions?: SessionStore;
-  readonly secureCookie?: boolean;
   readonly getFileStorage?: () => Promise<FileStorage>;
   readonly buildFileStorage?: (config: StorageConfig) => FileStorage;
   readonly runStorageMigration?: (migrationId: number) => void;
@@ -107,7 +106,12 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     cookieOpts: {
       path: "/",
       httpOnly: true,
-      secure: deps.secureCookie ?? false,
+      // "auto" (rather than a fixed true/false) checks request.protocol per
+      // request via trustProxy's X-Forwarded-Proto handling below — the
+      // Secure attribute lands correctly whether the app sits behind a TLS
+      // reverse proxy or is reached directly over plain HTTP, with no env
+      // var needed to tell it which.
+      secure: "auto",
       sameSite: "lax",
     },
     // htmx puts hx-delete/hx-get form values in the query string rather than
@@ -144,7 +148,6 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
       defaultPasswordHash: deps.passwordHash,
       ...(deps.settings === undefined ? {} : { settings: deps.settings }),
       sessions: deps.sessions,
-      secureCookie: deps.secureCookie ?? false,
     });
     app.addHook("onRequest", sessionHook(deps.sessions));
     app.addHook("preValidation", (request, reply, done) => {

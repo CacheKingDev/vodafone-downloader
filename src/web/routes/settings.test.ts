@@ -90,7 +90,6 @@ async function buildAuthedTestApp(): Promise<{
     getFileStorage: async () => new AtomicFileStorage(join(dir, "downloads")),
     passwordHash: hashAdminPassword(ADMIN_PASSWORD),
     sessions,
-    secureCookie: false,
   });
   return { app: testApp, settingsRepo, sessions };
 }

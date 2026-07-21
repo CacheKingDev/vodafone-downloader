@@ -53,7 +53,6 @@ beforeEach(async () => {
     version: "0.1.0",
     passwordHash: hashAdminPassword(ADMIN_PASSWORD),
     sessions,
-    secureCookie: false,
   });
   app.get("/protected-test-route", async (_request, reply) => {
     reply.send("ok");

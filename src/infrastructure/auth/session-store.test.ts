@@ -82,4 +82,28 @@ describe("SessionStore", () => {
     const [id] = session.token.split(".");
     expect(store.verify(`${id}.wrong-secret`)).toBe(false);
   });
+
+  describe("deleteAllExcept", () => {
+    it("keeps the given session valid but invalidates every other one", () => {
+      const kept = store.create();
+      const others = [store.create(), store.create()];
+
+      store.deleteAllExcept(kept.token);
+
+      expect(store.verify(kept.token)).toBe(true);
+      for (const other of others) {
+        expect(store.verify(other.token)).toBe(false);
+      }
+    });
+
+    it("deletes every session when given an undefined token", () => {
+      const sessions = [store.create(), store.create()];
+
+      store.deleteAllExcept(undefined);
+
+      for (const session of sessions) {
+        expect(store.verify(session.token)).toBe(false);
+      }
+    });
+  });
 });

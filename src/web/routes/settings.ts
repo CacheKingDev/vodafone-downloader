@@ -1,11 +1,20 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { SettingsUiRepository } from "../../domain/ports/repositories.js";
+import {
+  hashAdminPassword,
+  resolveAdminPasswordHash,
+  verifyAdminPassword,
+} from "../../infrastructure/auth/admin-auth.js";
+import type { SessionStore } from "../../infrastructure/auth/session-store.js";
 import { renderFilename } from "../../infrastructure/storage/filename-template.js";
 import { sendPage } from "../render.js";
 import { settingsPage } from "../views/settings.js";
 
 export interface SettingsRouteOptions {
   readonly settings: SettingsUiRepository;
+  /** Both undefined outside the real app (e.g. route-level unit tests) — the admin-password form is skipped then. */
+  readonly sessions?: SessionStore;
+  readonly defaultPasswordHash?: Buffer;
 }
 
 const PRESETS: Record<string, string> = {
@@ -58,6 +67,70 @@ export function registerSettingsRoutes(app: FastifyInstance, options: SettingsRo
       return reply.redirect("/settings");
     },
   );
+
+  const sessions = options.sessions;
+  const defaultPasswordHash = options.defaultPasswordHash;
+  if (sessions !== undefined && defaultPasswordHash !== undefined) {
+    app.post<{
+      Body: { currentPassword?: string; newPassword?: string; newPasswordConfirm?: string };
+    }>("/settings/admin-password", async (request, reply) => {
+      const currentPassword = request.body.currentPassword ?? "";
+      const newPassword = request.body.newPassword ?? "";
+      const newPasswordConfirm = request.body.newPasswordConfirm ?? "";
+
+      const activeHash = await resolveAdminPasswordHash(options.settings, defaultPasswordHash);
+      if (!verifyAdminPassword(currentPassword, activeHash)) {
+        return sendSettingsPage(request, reply, options, {
+          kind: "error",
+          text: "Aktuelles Passwort ist falsch.",
+        });
+      }
+      if (newPassword.length === 0) {
+        return sendSettingsPage(request, reply, options, {
+          kind: "error",
+          text: "Neues Passwort darf nicht leer sein.",
+        });
+      }
+      if (newPassword !== newPasswordConfirm) {
+        return sendSettingsPage(request, reply, options, {
+          kind: "error",
+          text: "Neue Passwörter stimmen nicht überein.",
+        });
+      }
+
+      await options.settings.setAdminPasswordHash(hashAdminPassword(newPassword).toString("hex"));
+      sessions.deleteAllExcept(request.cookies.session);
+
+      return sendSettingsPage(request, reply, options, {
+        kind: "success",
+        text: "Admin-Passwort wurde geändert.",
+      });
+    });
+  }
+}
+
+async function sendSettingsPage(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  options: SettingsRouteOptions,
+  flash: { kind: "error" | "success"; text: string },
+): Promise<void> {
+  const [filenameTemplate, syncSchedule] = await Promise.all([
+    options.settings.filenameTemplate(),
+    options.settings.syncSchedule(),
+  ]);
+  const csrfToken = reply.generateCsrf();
+  sendPage(request, reply, {
+    title: "Settings",
+    body: settingsPage({
+      csrfToken,
+      filenameTemplate,
+      syncSchedule,
+      preview: previewFilename(filenameTemplate),
+    }),
+    csrfToken,
+    flash,
+  });
 }
 
 function previewFilename(template: string): string {

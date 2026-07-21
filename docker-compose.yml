@@ -1,0 +1,30 @@
+services:
+  vodafone-downloader:
+    build: .
+    image: vodafone-downloader:local
+    restart: unless-stopped
+    init: true
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 256
+    stop_grace_period: 20s
+    ports:
+      - "8080:8080"
+    environment:
+      # Required — the app refuses to start without it.
+      ADMIN_PASSWORD: "admin"
+      # Optional: pin the encryption key across recreations (64 hex chars /
+      # 32 bytes). Without it, a key is generated once into CONFIG_DIR and
+      # reused from there — fine as long as the /config volume persists.
+      # ENCRYPTION_KEY: ""
+      TZ: "Europe/Vienna"
+    volumes:
+      - ./data/config:/config
+      - ./data/downloads:/downloads
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

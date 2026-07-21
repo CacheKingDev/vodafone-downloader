@@ -12,7 +12,19 @@ export function settingsPage(data: {
 </section>
 <div class="settings-grid">
   <form method="post" action="/settings">
-    <label for="filenameTemplate">Dateinamen-Template</label>
+    <label for="filenameTemplate">
+      Dateinamen-Template
+      <button type="button" class="btn-secondary help-icon" popovertarget="template-help"
+              aria-label="Verfügbare Platzhalter anzeigen">?</button>
+    </label>
+    <div id="template-help" popover class="help-popover">
+      <p><code>{account_label}</code> – Bezeichnung des Kontos</p>
+      <p><code>{invoice_number}</code> – Rechnungsnummer</p>
+      <p><code>{year}</code> / <code>{month}</code> / <code>{day}</code> – aus dem Rechnungsdatum abgeleitet</p>
+      <p><code>{issued_on}</code> – vollständiges Rechnungsdatum (JJJJ-MM-TT)</p>
+      <p><code>{sub_type}</code> – Dokumentart (z. B. „Rechnung“), „unknown“ falls unbekannt</p>
+      <p><code>{contract_number}</code> – Vertragsnummer, „unknown“ falls unbekannt</p>
+    </div>
     <input type="hidden" name="_csrf" value="${escapeHtml(data.csrfToken)}">
     <input id="filenameTemplate" name="filenameTemplate" value="${escapeHtml(data.filenameTemplate)}" required
            hx-get="/settings/preview" hx-trigger="input changed delay:300ms"

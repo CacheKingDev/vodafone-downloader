@@ -136,6 +136,28 @@ describe("GET /settings", () => {
     expect(response.body).toContain('hx-target="#template-preview"');
     expect(response.body).toContain('id="template-preview"');
   });
+
+  it("shows the placeholder legend popover with all allowed placeholders", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({ method: "GET", url: "/settings" });
+
+    expect(response.body).toContain('popovertarget="template-help"');
+    expect(response.body).toContain('id="template-help" popover');
+    for (const placeholder of [
+      "account_label",
+      "invoice_number",
+      "year",
+      "month",
+      "day",
+      "issued_on",
+      "sub_type",
+      "contract_number",
+    ]) {
+      expect(response.body).toContain(`{${placeholder}}`);
+    }
+  });
 });
 
 describe("GET /settings/preview", () => {

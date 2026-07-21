@@ -34,7 +34,7 @@
     "beforetoggle",
     function (event) {
       var popover = event.target;
-      if (!popover.matches || !popover.matches(".row-menu-panel") || event.newState !== "open") {
+      if (!popover.matches || !popover.matches(".row-menu-panel, .help-popover") || event.newState !== "open") {
         return;
       }
       var trigger = document.querySelector('[popovertarget="' + popover.id + '"]');

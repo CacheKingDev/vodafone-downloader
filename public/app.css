@@ -698,6 +698,40 @@ tbody tr:last-child td {
   width: 100%;
 }
 
+.help-icon {
+  border-radius: 50%;
+  height: 1.4rem;
+  line-height: 1;
+  margin-left: 0.35rem;
+  padding: 0;
+  width: 1.4rem;
+}
+
+/*
+ * Gleiches Prinzip wie .row-menu-panel: natives Popover-API rendert im Top
+ * Layer, Positionierung übernimmt storage-wizard.js (beforetoggle-Listener).
+ */
+.help-popover {
+  background: var(--vid-surface);
+  border: 1px solid var(--vid-border);
+  border-radius: 0.3rem;
+  box-shadow: var(--vid-shadow);
+  inset: auto;
+  margin: 0;
+  max-width: 22rem;
+  padding: 0.75rem 0.9rem;
+  position: fixed;
+}
+
+.help-popover:popover-open {
+  display: block;
+}
+
+.help-popover p {
+  font-size: 0.86rem;
+  margin: 0.3rem 0;
+}
+
 /* Long host/path values in the storage table's "Ziel" column truncate with
  * an ellipsis (full value in the title tooltip) instead of forcing the
  * table wider than the viewport. */

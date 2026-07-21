@@ -109,6 +109,31 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
       .run();
   }
 
+  async resetDocument(documentId: number): Promise<number | undefined> {
+    const row = this.#db
+      .select({ accountId: invoice.accountId })
+      .from(invoiceDocument)
+      .innerJoin(invoice, eq(invoiceDocument.invoiceId, invoice.id))
+      .where(eq(invoiceDocument.id, documentId))
+      .get();
+    if (row === undefined) return undefined;
+
+    this.#db
+      .update(invoiceDocument)
+      .set({
+        state: "pending",
+        relativePath: null,
+        sha256: null,
+        sizeBytes: null,
+        storedAt: null,
+        lastError: null,
+      })
+      .where(eq(invoiceDocument.id, documentId))
+      .run();
+
+    return row.accountId;
+  }
+
   async listInvoices(filters: InvoiceListFilters): Promise<InvoiceListResult> {
     const conditions = this.#invoiceConditions(filters);
     const where = conditions.length > 0 ? and(...conditions) : undefined;

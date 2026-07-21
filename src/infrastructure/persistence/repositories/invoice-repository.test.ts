@@ -278,3 +278,44 @@ describe("DrizzleInvoiceRepository.findStoredDocument", () => {
     await expect(repo.findStoredDocument(target.id)).resolves.toBeUndefined();
   });
 });
+
+describe("DrizzleInvoiceRepository.resetDocument", () => {
+  it("resets a stored document back to pending and returns its accountId", async () => {
+    await repo.insertInvoice(accountId, sample);
+    const docs = await repo.listRetryableDocuments(accountId);
+    const target = docs[0];
+    if (target === undefined) throw new Error("no document");
+    await repo.markStored(
+      target.id,
+      { relativePath: "a/r.pdf", sha256: "abc", sizeBytes: 21 },
+      1700000000,
+    );
+
+    await expect(repo.resetDocument(target.id)).resolves.toBe(accountId);
+
+    const row = db.select().from(invoiceDocument).where(eq(invoiceDocument.id, target.id)).get();
+    expect(row?.state).toBe("pending");
+    expect(row?.relativePath).toBeNull();
+    expect(row?.sha256).toBeNull();
+    expect(row?.sizeBytes).toBeNull();
+    expect(row?.storedAt).toBeNull();
+    expect(row?.lastError).toBeNull();
+  });
+
+  it("is safe to call on an already-pending document", async () => {
+    await repo.insertInvoice(accountId, sample);
+    const docs = await repo.listRetryableDocuments(accountId);
+    const target = docs[0];
+    if (target === undefined) throw new Error("no document");
+
+    await expect(repo.resetDocument(target.id)).resolves.toBe(accountId);
+
+    const row = db.select().from(invoiceDocument).where(eq(invoiceDocument.id, target.id)).get();
+    expect(row?.state).toBe("pending");
+    expect(row?.relativePath).toBeNull();
+  });
+
+  it("returns undefined for an unknown document id", async () => {
+    await expect(repo.resetDocument(999)).resolves.toBeUndefined();
+  });
+});

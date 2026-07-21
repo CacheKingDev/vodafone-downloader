@@ -131,6 +131,13 @@ export interface InvoiceRepository {
   listRetryableDocuments(accountId: number): Promise<RetryableDocument[]>;
   markStored(documentId: number, file: StoredFile, nowSeconds: number): Promise<void>;
   markFailed(documentId: number, message: string): Promise<void>;
+  /**
+   * Resets a document to state="pending" and clears relativePath/sha256/
+   * sizeBytes/storedAt/lastError, so the next sync run downloads it again.
+   * Safe to call regardless of the document's current state. Returns the
+   * accountId of the owning account, or undefined if no such document exists.
+   */
+  resetDocument(documentId: number): Promise<number | undefined>;
 }
 
 export interface SettingsRepository {

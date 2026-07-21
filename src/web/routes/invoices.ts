@@ -1,6 +1,6 @@
-import { createReadStream } from "node:fs";
-import { basename, resolve } from "node:path";
+import { basename } from "node:path";
 import type { FastifyInstance } from "fastify";
+import type { FileStorage } from "../../domain/ports/file-storage.js";
 import type {
   AccountUiRepository,
   InvoiceListFilters,
@@ -14,7 +14,7 @@ const PAGE_SIZE = 25;
 export interface InvoiceRouteOptions {
   readonly accounts: AccountUiRepository;
   readonly invoices: InvoiceUiRepository;
-  readonly downloadsDir: string;
+  readonly getFileStorage: () => Promise<FileStorage>;
 }
 
 export function registerInvoiceRoutes(app: FastifyInstance, options: InvoiceRouteOptions): void {
@@ -42,13 +42,20 @@ export function registerInvoiceRoutes(app: FastifyInstance, options: InvoiceRout
     const id = parseInt(request.params.id, 10);
     const document = await options.invoices.findStoredDocument(id);
     if (document === undefined) return reply.status(404).send("Not found");
-    const root = resolve(options.downloadsDir);
-    const absolutePath = resolve(root, document.relativePath);
-    if (!absolutePath.startsWith(root)) return reply.status(404).send("Not found");
+
+    let bytes: Buffer;
+    try {
+      const storage = await options.getFileStorage();
+      bytes = await storage.retrieve(document.relativePath);
+    } catch (error) {
+      request.log.error({ err: error, documentId: id }, "failed to retrieve stored document");
+      return reply.status(500).send("Datei konnte nicht geladen werden.");
+    }
+
     reply
       .type("application/pdf")
       .header("Content-Disposition", `attachment; filename="${basename(document.relativePath)}"`);
-    return reply.send(createReadStream(absolutePath));
+    return reply.send(bytes);
   });
 }
 

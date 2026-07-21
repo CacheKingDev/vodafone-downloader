@@ -49,32 +49,43 @@ export function discoveryAssetSelection(
 </section>`;
 }
 
-export function accountRow(account: AccountSummary, csrfToken: string, note?: string): string {
+export interface AccountRowNote {
+  readonly kind: "success" | "error";
+  readonly text: string;
+}
+
+export function accountRow(
+  account: AccountSummary,
+  csrfToken: string,
+  note?: AccountRowNote,
+): string {
   const csrf = escapeHtml(csrfToken);
   const noteRow =
-    note !== undefined ? `<tr><td colspan="4"><small>${escapeHtml(note)}</small></td></tr>` : "";
+    note !== undefined
+      ? `<tr class="row-note row-note-${note.kind}"><td colspan="4">${escapeHtml(note.text)}</td></tr>`
+      : "";
   return `
 <tr id="account-row-${account.id}">
   <td>${escapeHtml(account.label)}</td>
   <td>${statusBadge(account.status)}</td>
   <td>${account.enabled ? "aktiv" : "deaktiviert"}</td>
-  <td>
-    <form hx-post="/accounts/${account.id}/toggle" hx-target="#account-row-${account.id}" hx-swap="outerHTML" style="display:inline">
+  <td class="table-actions">
+    <form class="inline-form" hx-post="/accounts/${account.id}/toggle" hx-target="#account-row-${account.id}" hx-swap="outerHTML">
       <input type="hidden" name="_csrf" value="${csrf}">
-      <button type="submit">${account.enabled ? "Deaktivieren" : "Aktivieren"}</button>
+      <button class="btn-secondary" type="submit">${account.enabled ? "Deaktivieren" : "Aktivieren"}</button>
     </form>
-    <form hx-post="/accounts/${account.id}/test" hx-target="#account-row-${account.id}" hx-swap="outerHTML" style="display:inline">
+    <form class="inline-form" hx-post="/accounts/${account.id}/test" hx-target="#account-row-${account.id}" hx-swap="outerHTML">
       <input type="hidden" name="_csrf" value="${csrf}">
-      <button type="submit">Verbindung testen</button>
+      <button class="btn-secondary" type="submit">Verbindung testen</button>
     </form>
-    <form hx-post="/accounts/${account.id}/session" hx-target="#account-row-${account.id}" hx-swap="outerHTML" style="display:inline">
+    <form class="inline-form" hx-post="/accounts/${account.id}/session" hx-target="#account-row-${account.id}" hx-swap="outerHTML">
       <input type="hidden" name="_csrf" value="${csrf}">
-      <button type="submit">Session erneuern</button>
+      <button class="btn-secondary" type="submit">Session erneuern</button>
     </form>
-    <a href="/accounts/${account.id}/edit">Bearbeiten</a>
-    <form hx-delete="/accounts/${account.id}" hx-target="#account-row-${account.id}" hx-swap="outerHTML" hx-confirm="Konto wirklich löschen?" style="display:inline">
+    <a class="btn-secondary" role="button" href="/accounts/${account.id}/edit">Bearbeiten</a>
+    <form class="inline-form" hx-delete="/accounts/${account.id}" hx-target="#account-row-${account.id}" hx-swap="outerHTML" hx-confirm="Konto wirklich löschen?">
       <input type="hidden" name="_csrf" value="${csrf}">
-      <button type="submit">Löschen</button>
+      <button class="btn-danger" type="submit">Löschen</button>
     </form>
   </td>
 </tr>${noteRow}`;
@@ -82,14 +93,18 @@ export function accountRow(account: AccountSummary, csrfToken: string, note?: st
 
 export function accountsListPage(accounts: readonly AccountSummary[], csrfToken: string): string {
   const rows = accounts.map((a) => accountRow(a, csrfToken)).join("\n");
+  const table =
+    accounts.length === 0
+      ? `<p class="empty-state">Noch keine Konten angelegt.</p>`
+      : `<table>
+    <thead><tr><th class="expand">Bezeichnung</th><th>Status</th><th>Aktiv</th><th class="expand">Aktionen</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
   return `
 <section>
   <h1>Konten</h1>
   <p><a href="/accounts/new" role="button">Konto hinzufügen</a></p>
-  <table>
-    <thead><tr><th>Bezeichnung</th><th>Status</th><th>Aktiv</th><th>Aktionen</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  ${table}
 </section>`;
 }
 

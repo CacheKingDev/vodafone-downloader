@@ -1,11 +1,17 @@
 import type { FastifyInstance } from "fastify";
-import { verifyAdminPassword } from "../../infrastructure/auth/admin-auth.js";
+import type { SettingsUiRepository } from "../../domain/ports/repositories.js";
+import {
+  resolveAdminPasswordHash,
+  verifyAdminPassword,
+} from "../../infrastructure/auth/admin-auth.js";
 import type { SessionStore } from "../../infrastructure/auth/session-store.js";
 import { sendPage } from "../render.js";
 import { loginPage } from "../views/login.js";
 
 export interface AuthRouteOptions {
-  readonly passwordHash: Buffer;
+  /** Hash of the ADMIN_PASSWORD env var, used until an override is set via the settings page. */
+  readonly defaultPasswordHash: Buffer;
+  readonly settings?: SettingsUiRepository;
   readonly sessions: SessionStore;
   readonly secureCookie: boolean;
 }
@@ -23,7 +29,11 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
 
   app.post<{ Body: { password?: string } }>("/login", async (request, reply) => {
     const password = request.body.password ?? "";
-    if (!verifyAdminPassword(password, options.passwordHash)) {
+    const activeHash = await resolveAdminPasswordHash(
+      options.settings,
+      options.defaultPasswordHash,
+    );
+    if (!verifyAdminPassword(password, activeHash)) {
       const csrfToken = reply.generateCsrf();
       return sendPage(request, reply, {
         title: "Login",

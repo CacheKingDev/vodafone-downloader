@@ -73,7 +73,12 @@ function makeDeps(overrides?: {
     listInvoices: ReturnType<typeof vi.fn>;
     fetchDocument: ReturnType<typeof vi.fn>;
   };
-  storage: { store: ReturnType<typeof vi.fn> };
+  storage: {
+    store: ReturnType<typeof vi.fn>;
+    retrieve: ReturnType<typeof vi.fn>;
+    remove: ReturnType<typeof vi.fn>;
+    testConnection: ReturnType<typeof vi.fn>;
+  };
 } {
   const account = overrides && "account" in overrides ? overrides.account : baseAccount;
   return {
@@ -106,10 +111,17 @@ function makeDeps(overrides?: {
         sha256: "hash",
         sizeBytes: bytes.length,
       })),
+      retrieve: vi.fn(async () => Buffer.from("")),
+      remove: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({ success: true, steps: [], pathMissing: false })),
+      checkReadAccess: vi.fn(async () => true),
+      checkWriteAccess: vi.fn(async () => true),
+      createDirectory: vi.fn(async () => undefined),
     },
     renderFilename: (_template, context) => `${context.invoiceNumber}.pdf`,
     validatePdf: () => undefined,
     now: () => 1_700_000_000,
+    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 }
 
@@ -221,6 +233,100 @@ describe("syncAccount document download", () => {
     const report = await syncAccount(deps, 1);
     expect(report.outcome).toBe("failed");
     expect(deps.invoices.markFailed).not.toHaveBeenCalled();
+  });
+});
+
+describe("syncAccount logging", () => {
+  it("logs start and finish of a successful sync", async () => {
+    const deps = makeDeps({
+      invoices: [invoiceOf("111111111111", "2026-01-01")],
+      retryable: [retryableOf(10, "doc-1")],
+    });
+    await syncAccount(deps, 1);
+    expect(deps.logger.info).toHaveBeenCalledWith(
+      { accountId: 1, label: "Privat" },
+      "sync started",
+    );
+    expect(deps.logger.info).toHaveBeenCalledWith(
+      {
+        accountId: 1,
+        label: "Privat",
+        outcome: "success",
+        invoicesSeen: 1,
+        invoicesNew: 1,
+        documentsStored: 1,
+        failedCount: 0,
+      },
+      "sync finished",
+    );
+  });
+
+  it("logs a document failure with the remote document id", async () => {
+    const deps = makeDeps({ retryable: [retryableOf(10, "doc-1")] });
+    deps.provider.fetchDocument.mockRejectedValue(new Error("bad pdf"));
+    const report = await syncAccount(deps, 1);
+    expect(report.outcome).toBe("partial");
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      { accountId: 1, remoteDocumentId: "doc-1", message: "bad pdf" },
+      "document download failed",
+    );
+  });
+
+  it("logs a warning when an account is skipped as disabled", async () => {
+    const deps = makeDeps({ account: { ...baseAccount, enabled: false } });
+    await syncAccount(deps, 1);
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      { accountId: 1, label: "Privat" },
+      "sync skipped: account disabled",
+    );
+  });
+
+  it("logs a warning when an account is skipped as needs_action", async () => {
+    const deps = makeDeps({ account: { ...baseAccount, status: "needs_action" } });
+    await syncAccount(deps, 1);
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      { accountId: 1, label: "Privat" },
+      "sync skipped: account needs action",
+    );
+  });
+
+  it("logs a warning when the account does not exist", async () => {
+    const deps = makeDeps({ account: undefined });
+    await syncAccount(deps, 42);
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      { accountId: 42 },
+      "sync skipped: account not found",
+    );
+  });
+
+  it("logs a warning when authentication is rejected", async () => {
+    const deps = makeDeps();
+    deps.provider.getSession.mockRejectedValue(new AuthenticationFailedError("rejected"));
+    await syncAccount(deps, 1);
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      { accountId: 1, label: "Privat", err: expect.any(AuthenticationFailedError) },
+      "sync failed: authentication rejected, account parked",
+    );
+  });
+
+  it("logs an error when the portal contract changed", async () => {
+    const deps = makeDeps();
+    deps.provider.listInvoices.mockRejectedValue(new PortalContractError("changed"));
+    await syncAccount(deps, 1);
+    expect(deps.logger.error).toHaveBeenCalledWith(
+      { accountId: 1, label: "Privat", err: expect.any(PortalContractError) },
+      "sync failed: portal contract changed",
+    );
+  });
+
+  it("logs a warning on a transient error", async () => {
+    const deps = makeDeps();
+    deps.provider.listInvoices.mockRejectedValue(new TransientNetworkError("offline"));
+    await syncAccount(deps, 1);
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      { accountId: 1, label: "Privat", err: expect.any(TransientNetworkError) },
+      "sync failed: transient error",
+    );
   });
 });
 

@@ -8,13 +8,17 @@ import rateLimit from "@fastify/rate-limit";
 import staticFiles from "@fastify/static";
 import Fastify, { type FastifyBaseLogger, type FastifyInstance, LogController } from "fastify";
 import type { AccountCredentials, DiscoveredAsset } from "../domain/invoice.js";
+import type { FileStorage } from "../domain/ports/file-storage.js";
 import type {
   AccountUiRepository,
   InvoiceUiRepository,
+  MigrationRepository,
   RunTrigger,
   RunUiRepository,
   SettingsUiRepository,
+  StorageTargetUiRepository,
 } from "../domain/ports/repositories.js";
+import type { StorageConfig } from "../domain/storage-config.js";
 import type { DiscoveryTokenStore } from "../infrastructure/auth/discovery-token-store.js";
 import type { SessionStore } from "../infrastructure/auth/session-store.js";
 import type { Cipher } from "../infrastructure/crypto/cipher.js";
@@ -28,6 +32,7 @@ import { registerInvoiceRoutes } from "./routes/invoices.js";
 import { registerLogsRoutes } from "./routes/logs.js";
 import { registerRunsRoutes } from "./routes/runs.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
+import { registerStorageRoutes } from "./routes/storage.js";
 import { sessionHook } from "./session-hook.js";
 
 export interface ServerDeps {
@@ -38,6 +43,8 @@ export interface ServerDeps {
   readonly invoices?: InvoiceUiRepository;
   readonly runs?: RunUiRepository;
   readonly settings?: SettingsUiRepository;
+  readonly storageTargets?: StorageTargetUiRepository;
+  readonly migrations?: MigrationRepository;
   readonly cipher?: Cipher;
   readonly discoveryTokens?: DiscoveryTokenStore;
   readonly discoverAssets?: (credentials: AccountCredentials) => Promise<DiscoveredAsset[]>;
@@ -46,7 +53,9 @@ export interface ServerDeps {
   readonly passwordHash?: Buffer;
   readonly sessions?: SessionStore;
   readonly secureCookie?: boolean;
-  readonly downloadsDir?: string;
+  readonly getFileStorage?: () => Promise<FileStorage>;
+  readonly buildFileStorage?: (config: StorageConfig) => FileStorage;
+  readonly runStorageMigration?: (migrationId: number) => void;
   readonly logFile?: string;
   readonly nextRun?: () => Date | null;
 }
@@ -94,6 +103,22 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
       secure: deps.secureCookie ?? false,
       sameSite: "lax",
     },
+    // htmx puts hx-delete/hx-get form values in the query string rather than
+    // the request body (unlike hx-post) — the plugin's default getToken only
+    // looks at the body and headers, so a plain hidden "_csrf" input would
+    // always fail CSRF validation on hx-delete requests without this.
+    getToken(request) {
+      const body = request.body as { _csrf?: string } | undefined;
+      const query = request.query as { _csrf?: string } | undefined;
+      return (
+        body?._csrf ??
+        query?._csrf ??
+        (request.headers["csrf-token"] as string | undefined) ??
+        (request.headers["xsrf-token"] as string | undefined) ??
+        (request.headers["x-csrf-token"] as string | undefined) ??
+        (request.headers["x-xsrf-token"] as string | undefined)
+      );
+    },
   });
   await app.register(staticFiles, {
     root: join(process.cwd(), "public"),
@@ -109,7 +134,8 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   registerHealthRoute(app, { db: deps.db, version: deps.version });
   if (deps.sessions !== undefined && deps.passwordHash !== undefined) {
     registerAuthRoutes(app, {
-      passwordHash: deps.passwordHash,
+      defaultPasswordHash: deps.passwordHash,
+      ...(deps.settings === undefined ? {} : { settings: deps.settings }),
       sessions: deps.sessions,
       secureCookie: deps.secureCookie ?? false,
     });
@@ -132,7 +158,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     deps.discoveryTokens !== undefined &&
     deps.discoverAssets !== undefined &&
     deps.runAccount !== undefined &&
-    deps.downloadsDir !== undefined
+    deps.getFileStorage !== undefined
   ) {
     registerDashboardRoutes(app, {
       accounts: deps.accounts,
@@ -152,9 +178,23 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     registerInvoiceRoutes(app, {
       accounts: deps.accounts,
       invoices: deps.invoices,
-      downloadsDir: deps.downloadsDir,
+      getFileStorage: deps.getFileStorage,
     });
-    registerSettingsRoutes(app, { settings: deps.settings });
+    registerSettingsRoutes(app, {
+      settings: deps.settings,
+      ...(deps.sessions === undefined ? {} : { sessions: deps.sessions }),
+      ...(deps.passwordHash === undefined ? {} : { defaultPasswordHash: deps.passwordHash }),
+    });
+    if (deps.storageTargets !== undefined) {
+      registerStorageRoutes(app, {
+        targets: deps.storageTargets,
+        ...(deps.migrations === undefined ? {} : { migrations: deps.migrations }),
+        ...(deps.buildFileStorage === undefined ? {} : { buildFileStorage: deps.buildFileStorage }),
+        ...(deps.runStorageMigration === undefined
+          ? {}
+          : { runStorageMigration: deps.runStorageMigration }),
+      });
+    }
     registerRunsRoutes(app, {
       accounts: deps.accounts,
       runs: deps.runs,

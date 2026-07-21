@@ -8,6 +8,20 @@
       "when": 1784242513674,
       "tag": "0000_nervous_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784580598284,
+      "tag": "0001_stiff_phil_sheldon",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784585693873,
+      "tag": "0002_brief_terrax",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { eq, lt } from "drizzle-orm";
+import { eq, lt, ne } from "drizzle-orm";
 import type { Database } from "../persistence/database.js";
 import { adminSession } from "../persistence/schema.js";
 
@@ -73,6 +73,16 @@ export class SessionStore {
 
   deleteExpired(): void {
     this.#db.delete(adminSession).where(lt(adminSession.expiresAt, this.#now())).run();
+  }
+
+  /** After a password change: every other session is a stranger until they log in again. */
+  deleteAllExcept(currentToken: string | undefined): void {
+    const parsed = parseToken(currentToken);
+    if (parsed === null) {
+      this.#db.delete(adminSession).run();
+      return;
+    }
+    this.#db.delete(adminSession).where(ne(adminSession.id, parsed.id)).run();
   }
 }
 

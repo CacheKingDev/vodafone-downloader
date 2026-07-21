@@ -25,5 +25,18 @@ export function settingsPage(data: {
     <input id="syncSchedule" name="syncSchedule" value="${escapeHtml(data.syncSchedule)}" required>
     <button type="submit">Speichern</button>
   </form>
+</section>
+<section>
+  <h2>Admin-Passwort</h2>
+  <form method="post" action="/settings/admin-password">
+    <input type="hidden" name="_csrf" value="${escapeHtml(data.csrfToken)}">
+    <label for="currentPassword">Aktuelles Passwort</label>
+    <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+    <label for="newPassword">Neues Passwort</label>
+    <input type="password" id="newPassword" name="newPassword" required autocomplete="new-password">
+    <label for="newPasswordConfirm">Neues Passwort bestätigen</label>
+    <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" required autocomplete="new-password">
+    <button type="submit">Passwort ändern</button>
+  </form>
 </section>`;
 }

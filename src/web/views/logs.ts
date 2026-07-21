@@ -4,18 +4,25 @@ export interface LogLine {
   readonly level: string;
   readonly message: string;
   readonly time: string;
+  readonly context: Record<string, unknown>;
 }
+
+const CORE_FIELDS = new Set(["level", "msg", "time"]);
 
 export function parseLogLine(line: string): LogLine {
   try {
     const parsed = JSON.parse(line) as { level?: number; msg?: string; time?: string };
+    const context = Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>).filter(([key]) => !CORE_FIELDS.has(key)),
+    );
     return {
       level: levelName(parsed.level),
       message: parsed.msg ?? line,
       time: parsed.time ?? "",
+      context,
     };
   } catch {
-    return { level: "info", message: line, time: "" };
+    return { level: "info", message: line, time: "", context: {} };
   }
 }
 
@@ -23,9 +30,7 @@ export function logsPage(data: {
   readonly lines: readonly LogLine[];
   readonly level: string;
 }): string {
-  const content = data.lines
-    .map((line) => `[${line.time}] ${line.level.toUpperCase()} ${line.message}`)
-    .join("\n");
+  const content = data.lines.map(formatLine).join("\n");
   return `
 <section>
   <h1>Logs</h1>
@@ -42,10 +47,13 @@ export function logsPage(data: {
 }
 
 export function logsFragment(lines: readonly LogLine[]): string {
-  const content = lines
-    .map((line) => `[${line.time}] ${line.level.toUpperCase()} ${line.message}`)
-    .join("\n");
+  const content = lines.map(formatLine).join("\n");
   return `<pre class="log-lines">${escapeHtml(content)}</pre>`;
+}
+
+function formatLine(line: LogLine): string {
+  const suffix = Object.keys(line.context).length > 0 ? ` ${JSON.stringify(line.context)}` : "";
+  return `[${line.time}] ${line.level.toUpperCase()} ${line.message}${suffix}`;
 }
 
 function levelName(value: number | undefined): string {

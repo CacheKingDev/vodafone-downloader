@@ -56,10 +56,14 @@ export function invoicesPage(data: {
     <label>Bis <input type="date" name="to" value="${escapeHtml(data.filters.to ?? "")}"></label>
     <button type="submit">Filtern</button>
   </form>
-  <table>
-    <thead><tr><th>Konto</th><th>Nummer</th><th>Datum</th><th>Betrag</th><th>Status</th><th>Download</th></tr></thead>
+  ${
+    data.result.items.length === 0
+      ? `<p class="empty-state">Keine Rechnungen für diese Filter gefunden.</p>`
+      : `<table class="tbl-invoices">
+    <thead><tr><th class="expand">Konto</th><th>Nummer</th><th>Datum</th><th>Betrag</th><th>Status</th><th>Download</th></tr></thead>
     <tbody>${rows}</tbody>
-  </table>
+  </table>`
+  }
   ${pagination({
     basePath: "/invoices",
     page: data.page,

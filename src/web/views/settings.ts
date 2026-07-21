@@ -9,9 +9,11 @@ export function settingsPage(data: {
   return `
 <section>
   <h1>Settings</h1>
+</section>
+<div class="settings-grid">
   <form method="post" action="/settings">
-    <input type="hidden" name="_csrf" value="${escapeHtml(data.csrfToken)}">
     <label for="filenameTemplate">Dateinamen-Template</label>
+    <input type="hidden" name="_csrf" value="${escapeHtml(data.csrfToken)}">
     <input id="filenameTemplate" name="filenameTemplate" value="${escapeHtml(data.filenameTemplate)}" required>
     <p class="muted">Vorschau: ${escapeHtml(data.preview)}</p>
     <label for="preset">Zeitplan</label>
@@ -25,10 +27,8 @@ export function settingsPage(data: {
     <input id="syncSchedule" name="syncSchedule" value="${escapeHtml(data.syncSchedule)}" required>
     <button type="submit">Speichern</button>
   </form>
-</section>
-<section>
-  <h2>Admin-Passwort</h2>
   <form method="post" action="/settings/admin-password">
+    <h2>Admin-Passwort</h2>
     <input type="hidden" name="_csrf" value="${escapeHtml(data.csrfToken)}">
     <label for="currentPassword">Aktuelles Passwort</label>
     <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
@@ -38,5 +38,5 @@ export function settingsPage(data: {
     <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" required autocomplete="new-password">
     <button type="submit">Passwort ändern</button>
   </form>
-</section>`;
+</div>`;
 }

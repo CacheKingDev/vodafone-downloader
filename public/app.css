@@ -330,6 +330,22 @@ h2 {
   text-transform: uppercase;
 }
 
+/*
+ * Settings: two independent forms (sync config, admin password) side by
+ * side instead of stacked — stacked, each capped at the same narrow
+ * form max-width below, left half the page empty next to two short cards.
+ */
+.settings-grid {
+  align-items: start;
+  display: grid;
+  gap: 1.3rem;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+}
+
+.settings-grid form:not(.inline-form):not(.toolbar):not([hx-post]):not([hx-delete]) {
+  max-width: none;
+}
+
 article,
 form:not(.inline-form):not(.toolbar):not([hx-post]):not([hx-delete]),
 table,

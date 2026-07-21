@@ -55,14 +55,26 @@ export function dashboardPage(data: {
 </section>
 <section>
   <h2>Konten</h2>
-  <table><thead><tr><th>Name</th><th>Status</th><th>Aktiv</th></tr></thead><tbody>${accountRows}</tbody></table>
+  ${
+    data.accounts.length === 0
+      ? `<p class="empty-state">Noch keine Konten angelegt. <a href="/accounts/new">Jetzt hinzufügen</a>.</p>`
+      : `<table><thead><tr><th class="expand">Name</th><th>Status</th><th>Aktiv</th></tr></thead><tbody>${accountRows}</tbody></table>`
+  }
 </section>
 <section>
   <h2>Neue Rechnungen</h2>
-  <table><thead><tr><th>Konto</th><th>Nummer</th><th>Datum</th><th>Betrag</th></tr></thead><tbody>${invoiceRows}</tbody></table>
+  ${
+    data.recentInvoices.length === 0
+      ? `<p class="empty-state">Keine neuen Rechnungen in den letzten 7 Tagen.</p>`
+      : `<table class="tbl-invoices"><thead><tr><th class="expand">Konto</th><th>Nummer</th><th>Datum</th><th>Betrag</th></tr></thead><tbody>${invoiceRows}</tbody></table>`
+  }
 </section>
 <section>
   <h2>Letzte Läufe</h2>
-  <table><thead><tr><th>Konto</th><th>Start</th><th>Ergebnis</th></tr></thead><tbody>${runRows}</tbody></table>
+  ${
+    data.recentRuns.length === 0
+      ? `<p class="empty-state">Noch keine Läufe. <a href="/runs">Jetzt synchronisieren</a>.</p>`
+      : `<table class="tbl-runs-summary"><thead><tr><th class="expand">Konto</th><th>Start</th><th>Ergebnis</th></tr></thead><tbody>${runRows}</tbody></table>`
+  }
 </section>`;
 }

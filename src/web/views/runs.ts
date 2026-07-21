@@ -34,10 +34,14 @@ export function runsPage(data: {
     <label>Konto <select name="accountId">${options}</select></label>
     <button type="submit">Jetzt synchronisieren</button>
   </form>
-  <table>
-    <thead><tr><th>ID</th><th>Konto</th><th>Trigger</th><th>Start</th><th>Ende</th><th>Ergebnis</th></tr></thead>
+  ${
+    data.runs.length === 0
+      ? `<p class="empty-state">Noch keine Läufe.</p>`
+      : `<table class="tbl-runs">
+    <thead><tr><th>ID</th><th class="expand">Konto</th><th>Trigger</th><th>Start</th><th>Ende</th><th>Ergebnis</th></tr></thead>
     <tbody>${rows}</tbody>
-  </table>
+  </table>`
+  }
 </section>`;
 }
 

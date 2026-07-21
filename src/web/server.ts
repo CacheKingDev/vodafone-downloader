@@ -179,6 +179,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
       accounts: deps.accounts,
       invoices: deps.invoices,
       getFileStorage: deps.getFileStorage,
+      runAccount: deps.runAccount,
     });
     registerSettingsRoutes(app, {
       settings: deps.settings,

@@ -5,9 +5,10 @@ import type {
   AccountUiRepository,
   InvoiceListFilters,
   InvoiceUiRepository,
+  RunTrigger,
 } from "../../domain/ports/repositories.js";
 import { sendPage } from "../render.js";
-import { invoicesPage } from "../views/invoices.js";
+import { documentMissingPage, invoicesPage } from "../views/invoices.js";
 
 const PAGE_SIZE = 25;
 
@@ -15,6 +16,7 @@ export interface InvoiceRouteOptions {
   readonly accounts: AccountUiRepository;
   readonly invoices: InvoiceUiRepository;
   readonly getFileStorage: () => Promise<FileStorage>;
+  readonly runAccount: (accountId: number, trigger: RunTrigger) => Promise<unknown>;
 }
 
 export function registerInvoiceRoutes(app: FastifyInstance, options: InvoiceRouteOptions): void {
@@ -49,7 +51,13 @@ export function registerInvoiceRoutes(app: FastifyInstance, options: InvoiceRout
       bytes = await storage.retrieve(document.relativePath);
     } catch (error) {
       request.log.error({ err: error, documentId: id }, "failed to retrieve stored document");
-      return reply.status(500).send("Datei konnte nicht geladen werden.");
+      const csrfToken = reply.generateCsrf();
+      sendPage(request, reply, {
+        title: "Datei nicht verfügbar",
+        body: documentMissingPage({ csrfToken, documentId: id }),
+        csrfToken,
+      });
+      return;
     }
 
     reply
@@ -57,6 +65,18 @@ export function registerInvoiceRoutes(app: FastifyInstance, options: InvoiceRout
       .header("Content-Disposition", `inline; filename="${basename(document.relativePath)}"`);
     return reply.send(bytes);
   });
+
+  app.post<{ Params: { id: string } }>(
+    "/invoices/documents/:id/redownload",
+    async (request, reply) => {
+      const id = parseInt(request.params.id, 10);
+      const accountId = await options.invoices.resetDocument(id);
+      if (accountId !== undefined) {
+        await options.runAccount(accountId, "manual");
+      }
+      return reply.redirect("/invoices");
+    },
+  );
 }
 
 interface Query {

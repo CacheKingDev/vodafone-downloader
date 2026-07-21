@@ -78,3 +78,19 @@ export function invoicesPage(data: {
   })}
 </section>`;
 }
+
+export function documentMissingPage(data: {
+  readonly csrfToken: string;
+  readonly documentId: number;
+}): string {
+  return `
+<section>
+  <h1>Datei nicht verfügbar</h1>
+  <p>Die Datei konnte nicht geladen werden. Möglicherweise wurde sie gelöscht.</p>
+  <form method="post" action="/invoices/documents/${data.documentId}/redownload">
+    <input type="hidden" name="_csrf" value="${escapeHtml(data.csrfToken)}">
+    <button type="submit">Jetzt erneut herunterladen</button>
+  </form>
+  <p><a href="/invoices">Zurück zur Rechnungsübersicht</a></p>
+</section>`;
+}

@@ -100,6 +100,7 @@ function makeDeps(overrides?: {
       listRetryableDocuments: vi.fn(async () => overrides?.retryable ?? []),
       markStored: vi.fn(async () => undefined),
       markFailed: vi.fn(async () => undefined),
+      resetDocument: vi.fn(async () => undefined),
     },
     settings: {
       filenameTemplate: vi.fn(async () => "{invoice_number}.pdf"),

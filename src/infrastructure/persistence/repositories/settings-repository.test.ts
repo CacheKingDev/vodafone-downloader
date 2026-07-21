@@ -116,3 +116,41 @@ describe("DrizzleSettingsRepository.setSyncSchedule", () => {
     await expect(repo.syncSchedule()).resolves.toBe("0 8 * * 2");
   });
 });
+
+describe("DrizzleSettingsRepository.adminPasswordHash", () => {
+  it("returns null when no override was ever set", async () => {
+    await expect(repo.adminPasswordHash()).resolves.toBeNull();
+  });
+
+  it("returns a stored hash", async () => {
+    db.insert(setting)
+      .values({ key: "admin_password_hash", value: JSON.stringify("deadbeef") })
+      .run();
+    await expect(repo.adminPasswordHash()).resolves.toBe("deadbeef");
+  });
+
+  it("throws ConfigError when the stored value is not JSON for a string", async () => {
+    db.insert(setting).values({ key: "admin_password_hash", value: "not json{" }).run();
+    await expect(repo.adminPasswordHash()).rejects.toBeInstanceOf(ConfigError);
+  });
+
+  it("throws ConfigError for an empty string", async () => {
+    db.insert(setting)
+      .values({ key: "admin_password_hash", value: JSON.stringify("") })
+      .run();
+    await expect(repo.adminPasswordHash()).rejects.toBeInstanceOf(ConfigError);
+  });
+});
+
+describe("DrizzleSettingsRepository.setAdminPasswordHash", () => {
+  it("round-trips a hash through adminPasswordHash", async () => {
+    await repo.setAdminPasswordHash("deadbeef");
+    await expect(repo.adminPasswordHash()).resolves.toBe("deadbeef");
+  });
+
+  it("overwrites a previously stored hash (upsert)", async () => {
+    await repo.setAdminPasswordHash("deadbeef");
+    await repo.setAdminPasswordHash("cafef00d");
+    await expect(repo.adminPasswordHash()).resolves.toBe("cafef00d");
+  });
+});

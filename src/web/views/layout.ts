@@ -30,7 +30,7 @@ export function layout({
   <link rel="stylesheet" href="/public/pico.css">
   <link rel="stylesheet" href="/public/app.css">
 </head>
-<body>
+<body${authenticated ? "" : ' class="auth-layout"'}>
   ${
     authenticated
       ? `<header>

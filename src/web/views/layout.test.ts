@@ -27,6 +27,7 @@ describe("layout", () => {
 
   it("omits the header block entirely when unauthenticated", () => {
     const html = layout({ ...base, authenticated: false });
+    expect(html).toContain('<body class="auth-layout">');
     expect(html).not.toContain("<header>");
     expect(html).not.toContain("/dashboard");
     expect(html).not.toContain("/accounts");
@@ -39,6 +40,8 @@ describe("layout", () => {
 
   it("includes the header with nav links by default (authenticated)", () => {
     const html = layout(base);
+    expect(html).toContain("<body>");
+    expect(html).not.toContain("auth-layout");
     expect(html).toContain("<header>");
     expect(html).toContain('<a href="/dashboard">');
     expect(html).toContain('<a href="/accounts">');

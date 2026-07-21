@@ -76,6 +76,29 @@ main.container {
   padding-bottom: 2rem;
 }
 
+/*
+ * Login/auth pages have no header and a single narrow card as their entire
+ * content — center that card in the viewport instead of letting it sit
+ * top-left the way the app's normal (header + full-width) pages do.
+ */
+body.auth-layout {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+body.auth-layout main.container {
+  /*
+   * A flex item's width defaults to filling the main axis when auto (it does
+   * not shrink to its content the way a plain block would) — an explicit
+   * width is what actually lets justify-content: center narrow the card
+   * instead of just centering an invisible full-width box around it.
+   */
+  padding-bottom: 0;
+  width: min(100%, 30rem);
+}
+
 .top-nav {
   align-items: center;
   display: flex;

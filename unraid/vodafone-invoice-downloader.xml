@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>vodafone-invoice-downloader</Name>
+  <Repository>ghcr.io/cachekingdev/vodafone-downloader</Repository>
+  <Registry>https://github.com/CacheKingDev/vodafone-downloader/pkgs/container/vodafone-downloader</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/CacheKingDev/vodafone-downloader/issues</Support>
+  <Project>https://github.com/CacheKingDev/vodafone-downloader</Project>
+  <Overview>Lädt automatisch Rechnungen aus dem MeinVodafone-Kundenportal herunter und legt sie lokal oder auf einem Netzwerkspeicher (SMB, FTP/FTPS, SFTP, WebDAV) ab. Bietet ein Web-UI mit Login, mehreren Konten, Zeitplan (Cron) und manuellem Start. Anmeldedaten werden verschlüsselt in SQLite gespeichert.
+
+Inoffizielles Projekt, nicht von Vodafone autorisiert.</Overview>
+  <Category>Productivity: Tools:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/CacheKingDev/vodafone-downloader/main/unraid/vodafone-invoice-downloader.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/CacheKingDev/vodafone-downloader/main/public/icons/app-icon-v3-192.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI Port" Target="8080" Default="8080" Mode="tcp" Description="Port für das Web-UI" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Config-Verzeichnis" Target="/config" Default="/mnt/user/appdata/vodafone-invoice-downloader/config" Mode="rw" Description="SQLite-Datenbank, Verschlüsselungsschlüssel und Logs" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/vodafone-invoice-downloader/config</Config>
+  <Config Name="Downloads-Verzeichnis" Target="/downloads" Default="/mnt/user/appdata/vodafone-invoice-downloader/downloads" Mode="rw" Description="Lokale Ablage für heruntergeladene PDFs (nur genutzt, wenn kein Remote-Speicherziel konfiguriert ist)" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/vodafone-invoice-downloader/downloads</Config>
+  <Config Name="Admin-Passwort" Target="ADMIN_PASSWORD" Default="" Mode="" Description="Passwort für den Login im Web-UI (Pflichtfeld)" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Encryption Key" Target="ENCRYPTION_KEY" Default="" Mode="" Description="Optional: 64 Hex-Zeichen (32 Byte) zur Verschlüsselung gespeicherter Zugangsdaten. Leer lassen, um automatisch einen Schlüssel im Config-Verzeichnis zu erzeugen." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Log Level" Target="LOG_LEVEL" Default="info" Mode="" Description="fatal, error, warn, info, debug, trace oder silent" Type="Variable" Display="advanced" Required="false" Mask="false">info</Config>
+</Container>

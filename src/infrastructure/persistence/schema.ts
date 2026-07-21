@@ -86,6 +86,68 @@ export const run = sqliteTable("run", {
   artifactPath: text("artifact_path"),
 });
 
+export const storageTarget = sqliteTable(
+  "storage_target",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name").notNull(),
+    backend: text("backend", {
+      enum: ["local", "smb", "ftp", "sftp", "webdav"],
+    }).notNull(),
+    purpose: text("purpose", { enum: ["document", "backup", "export"] })
+      .notNull()
+      .default("document"),
+    description: text("description"),
+    isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+    status: text("status", {
+      enum: [
+        "draft",
+        "untested",
+        "testing",
+        "connected",
+        "failed",
+        "disabled",
+        "migration_pending",
+        "migrating",
+        "migration_failed",
+      ],
+    })
+      .notNull()
+      .default("draft"),
+    configEnc: blob("config_enc", { mode: "buffer" }),
+    lastTestedAt: integer("last_tested_at"),
+    lastTestError: text("last_test_error"),
+    createdAt: integer("created_at").notNull().default(now),
+    updatedAt: integer("updated_at").notNull().default(now),
+  },
+  (table) => [uniqueIndex("storage_target_name_unique").on(table.name)],
+);
+
+export const storageMigration = sqliteTable("storage_migration", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  // cascade, not restrict: there is no history view reading old migration
+  // rows once they're no longer "running" (deleteStorageTarget already
+  // refuses to delete a target involved in a currently running migration),
+  // so a finished migration record must not permanently block deleting
+  // either target it once referenced.
+  fromTargetId: integer("from_target_id")
+    .notNull()
+    .references(() => storageTarget.id, { onDelete: "cascade" }),
+  toTargetId: integer("to_target_id")
+    .notNull()
+    .references(() => storageTarget.id, { onDelete: "cascade" }),
+  mode: text("mode", { enum: ["migrate", "new_only"] }).notNull(),
+  status: text("status", { enum: ["running", "completed", "failed"] })
+    .notNull()
+    .default("running"),
+  totalDocuments: integer("total_documents").notNull().default(0),
+  migratedDocuments: integer("migrated_documents").notNull().default(0),
+  failedDocuments: integer("failed_documents").notNull().default(0),
+  startedAt: integer("started_at").notNull().default(now),
+  finishedAt: integer("finished_at"),
+  errorMessage: text("error_message"),
+});
+
 export const adminSession = sqliteTable("admin_session", {
   id: text("id").primaryKey(),
   tokenHash: text("token_hash").notNull(),
@@ -106,4 +168,8 @@ export type InvoiceDocumentRow = typeof invoiceDocument.$inferSelect;
 export type NewInvoiceDocumentRow = typeof invoiceDocument.$inferInsert;
 export type RunRow = typeof run.$inferSelect;
 export type NewRunRow = typeof run.$inferInsert;
+export type StorageMigrationRow = typeof storageMigration.$inferSelect;
+export type NewStorageMigrationRow = typeof storageMigration.$inferInsert;
+export type StorageTargetRow = typeof storageTarget.$inferSelect;
+export type NewStorageTargetRow = typeof storageTarget.$inferInsert;
 export type SettingRow = typeof setting.$inferSelect;

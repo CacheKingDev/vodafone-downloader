@@ -45,7 +45,7 @@ function insertAccount(sessionStateEnc: Buffer | null = null): number {
   return row.id;
 }
 
-const session: AuthSession = { accessToken: "tok", expiresAt: 4600, storageState: "{}" };
+const session: AuthSession = { accessToken: "tok", expiresAt: 4600, cookies: "{}" };
 
 describe("DrizzleAccountRepository", () => {
   it("returns undefined for a missing id", async () => {

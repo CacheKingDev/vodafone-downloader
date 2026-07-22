@@ -1,12 +1,12 @@
 /**
  * A usable authentication session: the bearer token, its expiry, and the
- * Playwright storage state (cookies) that a later silent renewal may reuse.
- * storageState is a serialised JSON string; M3 stores it encrypted.
+ * cookie jar a later silent renewal may reuse.
+ * `cookies` is a serialised JSON string (see cookie-jar.ts); M3 stores it encrypted.
  */
 export interface AuthSession {
   readonly accessToken: string;
   readonly expiresAt: number;
-  readonly storageState: string;
+  readonly cookies: string;
 }
 
 /**

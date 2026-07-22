@@ -14,7 +14,7 @@ import { account } from "../schema.js";
 const authSessionSchema = z.object({
   accessToken: z.string().min(1),
   expiresAt: z.number().int(),
-  storageState: z.string(),
+  cookies: z.string(),
 });
 
 const nowSeconds = (): number => Math.floor(Date.now() / 1000);

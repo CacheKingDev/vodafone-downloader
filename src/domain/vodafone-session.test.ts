@@ -4,7 +4,7 @@ import { type AuthSession, isSessionExpired } from "./vodafone-session.js";
 const session = (expiresAt: number): AuthSession => ({
   accessToken: "token",
   expiresAt,
-  storageState: "{}",
+  cookies: "{}",
 });
 
 describe("isSessionExpired", () => {

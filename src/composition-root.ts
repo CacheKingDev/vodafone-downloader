@@ -91,17 +91,21 @@ export async function createApplication(
   const sessions = new SessionStore(db);
   sessions.deleteExpired();
 
-  // Portal endpoints (design spec section 3). Silent renewal is confirmed
-  // supported by the milestone 2 smoke experiment.
+  // Portal endpoints (design spec section 3; HTTP-only login design doc
+  // 2026-07-22). clientId/redirectUri/scope are carried over from
+  // cbrand/vodafone-billing-downloader and NOT yet confirmed for our exact
+  // portal variant — see docs/superpowers/specs/2026-07-22-http-only-vodafone-login-design.md
+  // section 3. Correct here if scripts/smoke/vodafone-login.ts finds different values.
   const authenticator = new VodafoneAuthenticator({
-    loginUrl: "https://www.vodafone.de/meinvodafone/account/",
+    authorizeUrl: "https://www.vodafone.de/mint/oidc/authorize",
+    sessionStartUrl: "https://www.vodafone.de/mint/rest/v60/session/start",
     tokenUrl: "https://www.vodafone.de/mint/oidc/token",
-    authorizeUrl:
-      "https://www.vodafone.de/mint/oidc/authorize?prompt=none&response_type=code&scope=openid",
-    artifactsDir: join(config.configDir, "artifacts"),
+    clientId: "b0595a44-0726-11ec-9011-9457a55a403c",
+    redirectUri: "https://www.vodafone.de/meinvodafone/services/",
+    scope:
+      "openid profile webseal user-groups user-accounts validate-token update-email-username account",
     silentRenewalSupported: true,
     logger,
-    headless: true,
   });
   const apiClient = new VodafoneApiClient({
     baseUrl: "https://api.vodafone.de/meinvodafone/v2",

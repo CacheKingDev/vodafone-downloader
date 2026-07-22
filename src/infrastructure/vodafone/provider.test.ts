@@ -5,8 +5,8 @@ import type { AuthSession } from "../../domain/vodafone-session.js";
 import { VodafoneProviderFacade } from "./provider.js";
 
 const credentials: AccountCredentials = { username: "u", password: "p" };
-const fresh: AuthSession = { accessToken: "fresh", expiresAt: 10_000, storageState: "{}" };
-const expired: AuthSession = { accessToken: "old", expiresAt: 100, storageState: "{}" };
+const fresh: AuthSession = { accessToken: "fresh", expiresAt: 10_000, cookies: "{}" };
+const expired: AuthSession = { accessToken: "old", expiresAt: 100, cookies: "{}" };
 
 function deps(overrides: {
   fullLogin?: () => Promise<AuthSession>;

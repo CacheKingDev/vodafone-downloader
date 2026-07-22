@@ -9,14 +9,14 @@ export function newAccountForm(
   return `
 <section>
   <h1>Konto hinzufügen</h1>
-  <form method="post" action="/accounts/discover">
+  <form method="post" action="/accounts/discover" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore data-form-type="other">
     <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}">
     <label for="label">Bezeichnung</label>
     <input type="text" id="label" name="label" required value="${escapeHtml(values?.label ?? "")}">
     <label for="username">Vodafone-Benutzername</label>
-    <input type="text" id="username" name="username" required value="${escapeHtml(values?.username ?? "")}">
+    <input type="text" id="username" name="username" required autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore value="${escapeHtml(values?.username ?? "")}">
     <label for="password">Vodafone-Passwort</label>
-    <input type="password" id="password" name="password" required>
+    <input type="password" id="password" name="password" required autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>
     <button type="submit" data-busy-text="Anmeldung läuft…">Anmelden und Konten suchen</button>
   </form>
 </section>`;

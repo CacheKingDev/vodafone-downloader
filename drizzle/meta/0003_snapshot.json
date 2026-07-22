@@ -106,9 +106,7 @@
       "indexes": {
         "account_customer_urn_unique": {
           "name": "account_customer_urn_unique",
-          "columns": [
-            "customer_urn"
-          ],
+          "columns": ["customer_urn"],
           "isUnique": true
         }
       },
@@ -235,10 +233,7 @@
       "indexes": {
         "invoice_account_number_unique": {
           "name": "invoice_account_number_unique",
-          "columns": [
-            "account_id",
-            "number"
-          ],
+          "columns": ["account_id", "number"],
           "isUnique": true
         }
       },
@@ -247,12 +242,8 @@
           "name": "invoice_account_id_account_id_fk",
           "tableFrom": "invoice",
           "tableTo": "account",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -346,10 +337,7 @@
       "indexes": {
         "invoice_document_unique": {
           "name": "invoice_document_unique",
-          "columns": [
-            "invoice_id",
-            "remote_document_id"
-          ],
+          "columns": ["invoice_id", "remote_document_id"],
           "isUnique": true
         }
       },
@@ -358,12 +346,8 @@
           "name": "invoice_document_invoice_id_invoice_id_fk",
           "tableFrom": "invoice_document",
           "tableTo": "invoice",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invoice_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -421,10 +405,7 @@
       "indexes": {
         "invoice_document_export_unique": {
           "name": "invoice_document_export_unique",
-          "columns": [
-            "document_id",
-            "storage_target_id"
-          ],
+          "columns": ["document_id", "storage_target_id"],
           "isUnique": true
         }
       },
@@ -433,12 +414,8 @@
           "name": "invoice_document_export_document_id_invoice_document_id_fk",
           "tableFrom": "invoice_document_export",
           "tableTo": "invoice_document",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -446,12 +423,8 @@
           "name": "invoice_document_export_storage_target_id_storage_target_id_fk",
           "tableFrom": "invoice_document_export",
           "tableTo": "storage_target",
-          "columnsFrom": [
-            "storage_target_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["storage_target_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -543,12 +516,8 @@
           "name": "run_account_id_account_id_fk",
           "tableFrom": "run",
           "tableTo": "account",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -673,12 +642,8 @@
           "name": "storage_migration_from_target_id_storage_target_id_fk",
           "tableFrom": "storage_migration",
           "tableTo": "storage_target",
-          "columnsFrom": [
-            "from_target_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["from_target_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -686,12 +651,8 @@
           "name": "storage_migration_to_target_id_storage_target_id_fk",
           "tableFrom": "storage_migration",
           "tableTo": "storage_target",
-          "columnsFrom": [
-            "to_target_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["to_target_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -796,9 +757,7 @@
       "indexes": {
         "storage_target_name_unique": {
           "name": "storage_target_name_unique",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },

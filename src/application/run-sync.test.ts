@@ -14,6 +14,7 @@ const reportOf = (outcome: SyncReport["outcome"]): SyncReport => ({
 function makeDeps(overrides?: {
   syncableIds?: number[];
   sync?: (accountId: number) => Promise<SyncReport>;
+  exportToPaperless?: () => Promise<void>;
 }) {
   let nextRunId = 100;
   return {
@@ -23,6 +24,7 @@ function makeDeps(overrides?: {
       finishRun: vi.fn(async () => undefined),
     },
     sync: vi.fn(overrides?.sync ?? (async () => reportOf("success"))),
+    exportToPaperless: vi.fn(overrides?.exportToPaperless ?? (async () => undefined)),
     logger: { warn: vi.fn(), error: vi.fn() },
   };
 }
@@ -129,5 +131,31 @@ describe("RunCoordinator.runAccount", () => {
     await expect(coordinator.runAccount(1, "manual")).resolves.toBeNull();
     release();
     await all;
+  });
+
+  it("runs the paperless export step once after runAll", async () => {
+    const deps = makeDeps();
+    const coordinator = new RunCoordinator(deps);
+    await coordinator.runAll("schedule");
+    expect(deps.exportToPaperless).toHaveBeenCalledOnce();
+  });
+
+  it("runs the paperless export step after runAccount", async () => {
+    const deps = makeDeps();
+    const coordinator = new RunCoordinator(deps);
+    await coordinator.runAccount(7, "manual");
+    expect(deps.exportToPaperless).toHaveBeenCalledOnce();
+  });
+
+  it("logs and swallows a crash in the paperless export step", async () => {
+    const deps = makeDeps({
+      exportToPaperless: async () => {
+        throw new Error("paperless down");
+      },
+    });
+    const coordinator = new RunCoordinator(deps);
+    const result = await coordinator.runAll("schedule");
+    expect(result.started).toBe(true);
+    expect(deps.logger.error).toHaveBeenCalledOnce();
   });
 });

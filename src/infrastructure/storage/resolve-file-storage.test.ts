@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StorageTarget } from "../../domain/storage-target.js";
 import { AtomicFileStorage } from "./atomic-file-storage.js";
 import { FtpFileStorage } from "./ftp-file-storage.js";
+import { PaperlessFileStorage } from "./paperless-file-storage.js";
 import { buildFileStorage, resolveDefaultFileStorage } from "./resolve-file-storage.js";
 import { SftpFileStorage } from "./sftp-file-storage.js";
 import { SmbFileStorage } from "./smb-file-storage.js";
@@ -93,6 +94,22 @@ describe("buildFileStorage", () => {
         dir,
       ),
     ).toBeInstanceOf(WebDavFileStorage);
+  });
+
+  it("builds a PaperlessFileStorage for backend='paperless'", () => {
+    const storage = buildFileStorage(
+      {
+        backend: "paperless",
+        paperless: {
+          url: "https://paperless.example.com",
+          apiToken: "tok",
+          rejectUnauthorized: true,
+          deleteAfterUpload: false,
+        },
+      },
+      dir,
+    );
+    expect(storage).toBeInstanceOf(PaperlessFileStorage);
   });
 });
 

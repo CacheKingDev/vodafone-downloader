@@ -107,7 +107,7 @@ function secretField(
   if (mode === "create") {
     return field(`
     <label for="${id}">${escapeHtml(label)}</label>
-    <input id="${id}" name="${name}" type="password" autocomplete="off" value="${escapeHtml(values[name] ?? "")}">`);
+    <input id="${id}" name="${name}" type="password" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore value="${escapeHtml(values[name] ?? "")}">`);
   }
   return field(
     `
@@ -118,7 +118,7 @@ function secretField(
     </label>
     <div class="secret-reveal">
       <label for="${id}">Neu: ${escapeHtml(label)}</label>
-      <input id="${id}" name="${name}" type="password" autocomplete="off" value="${escapeHtml(values[name] ?? "")}">
+      <input id="${id}" name="${name}" type="password" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore value="${escapeHtml(values[name] ?? "")}">
     </div>`,
     true,
   );
@@ -128,7 +128,7 @@ function smbFields(values: StorageFormValues, mode: "create" | "edit", hasSecret
   return `<div class="form-grid">
     ${field(`
     <label for="smbHost">Server / Host</label>
-    <input id="smbHost" name="smbHost" required value="${escapeHtml(values.smbHost ?? "")}" autocomplete="off">`)}
+    <input id="smbHost" name="smbHost" required value="${escapeHtml(values.smbHost ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
     ${field(`
     <label for="smbShare">Freigabe</label>
     <input id="smbShare" name="smbShare" required value="${escapeHtml(values.smbShare ?? "")}" placeholder="Daten">`)}
@@ -137,11 +137,11 @@ function smbFields(values: StorageFormValues, mode: "create" | "edit", hasSecret
     <input id="smbPath" name="smbPath" value="${escapeHtml(values.smbPath ?? "")}" placeholder="Test/vodafone/rechnungen">`)}
     ${field(`
     <label for="smbUsername">Benutzername</label>
-    <input id="smbUsername" name="smbUsername" value="${escapeHtml(values.smbUsername ?? "")}" autocomplete="off">`)}
+    <input id="smbUsername" name="smbUsername" value="${escapeHtml(values.smbUsername ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
     ${secretField("smbPassword", "smbPassword", "Passwort", values, mode, hasSecret)}
     ${field(`
     <label for="smbDomain">Domain / Arbeitsgruppe (optional)</label>
-    <input id="smbDomain" name="smbDomain" value="${escapeHtml(values.smbDomain ?? "")}" autocomplete="off">`)}
+    <input id="smbDomain" name="smbDomain" value="${escapeHtml(values.smbDomain ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
     ${field(
       `<p class="muted">Anmeldung mit einem Microsoft-Konto (z. B. name@outlook.com) funktioniert nur, wenn der Windows-Rechner ein NTLM-fähiges Kennwort akzeptiert (nicht nur Windows Hello/PIN) und nicht ausschließlich über Microsoft Entra ID/Kerberos verwaltet wird. Domain/Arbeitsgruppe bleibt dabei meist leer.</p>`,
       true,
@@ -167,7 +167,7 @@ function sftpFields(
   return `<div class="form-grid">
     ${field(`
     <label for="sftpHost">Host</label>
-    <input id="sftpHost" name="sftpHost" required value="${escapeHtml(values.sftpHost ?? "")}" autocomplete="off">`)}
+    <input id="sftpHost" name="sftpHost" required value="${escapeHtml(values.sftpHost ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
     ${field(`
     <label for="sftpPort">Port</label>
     <input id="sftpPort" name="sftpPort" type="number" min="1" max="65535" value="${escapeHtml(values.sftpPort ?? "22")}">`)}
@@ -176,7 +176,7 @@ function sftpFields(
     <input id="sftpPath" name="sftpPath" value="${escapeHtml(values.sftpPath ?? "")}" placeholder="vodafone/rechnungen">`)}
     ${field(`
     <label for="sftpUsername">Benutzername</label>
-    <input id="sftpUsername" name="sftpUsername" required value="${escapeHtml(values.sftpUsername ?? "")}" autocomplete="off">`)}
+    <input id="sftpUsername" name="sftpUsername" required value="${escapeHtml(values.sftpUsername ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
     ${field(
       `
     <fieldset>
@@ -194,7 +194,7 @@ function sftpFields(
           true,
         )}
         ${field(`<label for="sftpPassphrase">Key-Passphrase (optional)</label>
-        <input id="sftpPassphrase" name="sftpPassphrase" type="password" autocomplete="off">`)}
+        <input id="sftpPassphrase" name="sftpPassphrase" type="password" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
       </div>
     </fieldset>`,
       true,
@@ -211,7 +211,7 @@ function ftpFields(values: StorageFormValues, mode: "create" | "edit", hasSecret
   return `<div class="form-grid">
     ${field(`
     <label for="ftpHost">Host</label>
-    <input id="ftpHost" name="ftpHost" required value="${escapeHtml(values.ftpHost ?? "")}" autocomplete="off">`)}
+    <input id="ftpHost" name="ftpHost" required value="${escapeHtml(values.ftpHost ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
     ${field(`
     <label for="ftpPort">Port</label>
     <input id="ftpPort" name="ftpPort" type="number" min="1" max="65535" value="${escapeHtml(values.ftpPort ?? "21")}" data-ftp-port>`)}
@@ -220,7 +220,7 @@ function ftpFields(values: StorageFormValues, mode: "create" | "edit", hasSecret
     <input id="ftpPath" name="ftpPath" value="${escapeHtml(values.ftpPath ?? "")}" placeholder="vodafone/rechnungen">`)}
     ${field(`
     <label for="ftpUsername">Benutzername</label>
-    <input id="ftpUsername" name="ftpUsername" value="${escapeHtml(values.ftpUsername ?? "")}" autocomplete="off">`)}
+    <input id="ftpUsername" name="ftpUsername" value="${escapeHtml(values.ftpUsername ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
     ${secretField("ftpPassword", "ftpPassword", "Passwort", values, mode, hasSecret)}
     ${field(`
     <label for="ftpSecure">Verbindungsart</label>
@@ -255,7 +255,7 @@ function webdavFields(
       <label><input type="radio" id="webdav-auth-none" name="webdavAuthKind" value="none"${authKind === "none" ? " checked" : ""}> Keine Authentifizierung</label>
       <div class="auth-fields auth-fields-basic form-grid">
         ${field(`<label for="webdavUsername">Benutzername</label>
-        <input id="webdavUsername" name="webdavUsername" value="${escapeHtml(values.webdavUsername ?? "")}" autocomplete="off">`)}
+        <input id="webdavUsername" name="webdavUsername" value="${escapeHtml(values.webdavUsername ?? "")}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>`)}
         ${secretField("webdavPassword", "webdavPassword", "Passwort", values, mode, hasSecret)}
       </div>
       <div class="auth-fields auth-fields-bearer form-grid">
@@ -312,7 +312,7 @@ export function storageCreateForm(options: StorageCreateFormOptions): string {
 <section>
   <h1>Speicherziel hinzufügen — ${escapeHtml(BACKEND_LABEL[options.type])}</h1>
   ${wizardSteps(2)}
-  <form method="post" action="/storage" id="storage-form" class="wide-form" autocomplete="off" data-storage-form>
+  <form method="post" action="/storage" id="storage-form" class="wide-form" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore data-form-type="other" data-storage-form>
     <input type="hidden" name="_csrf" value="${escapeHtml(options.csrfToken)}">
     <input type="hidden" name="type" value="${options.type}">
     <div class="form-grid">
@@ -351,7 +351,7 @@ export function storageEditForm(options: StorageEditFormOptions): string {
   return `
 <section>
   <h1>Speicherziel bearbeiten — ${escapeHtml(BACKEND_LABEL[options.type])}</h1>
-  <form method="post" action="/storage/${options.id}" id="storage-form" class="wide-form" autocomplete="off" data-storage-form>
+  <form method="post" action="/storage/${options.id}" id="storage-form" class="wide-form" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore data-form-type="other" data-storage-form>
     <input type="hidden" name="_csrf" value="${escapeHtml(options.csrfToken)}">
     <div class="form-grid">${commonFields(options.values)}</div>
     ${backendFields(options.type, options.values, "edit", options.hasSecret)}

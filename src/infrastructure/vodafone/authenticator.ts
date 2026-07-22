@@ -1,198 +1,213 @@
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
-import { type Browser, type BrowserContextOptions, chromium } from "playwright";
 import {
   AppError,
   AuthenticationFailedError,
+  RateLimitedError,
   SessionExpiredError,
   TransientNetworkError,
 } from "../../domain/errors.js";
 import type { AccountCredentials } from "../../domain/invoice.js";
 import type { AuthSession } from "../../domain/vodafone-session.js";
 import type { Logger } from "../logging/logger.js";
-import { loginSelectors } from "./selectors.js";
+import type { FetchLike } from "./api-client.js";
+import {
+  type CookieJar,
+  cookieHeader,
+  mergeCookies,
+  parseCookieJar,
+  parseSetCookiePairs,
+  serializeCookies,
+} from "./cookie-jar.js";
+import { codeChallengeFromVerifier, generateCodeVerifier } from "./pkce.js";
 import { parseTokenResponse } from "./token-parser.js";
 
-/**
- * Polls `condition` until it is true or `timeoutMs` elapses, then returns
- * either way — callers decide how to treat a timeout. Used instead of
- * Playwright's `waitForLoadState("networkidle")`, which never resolves on
- * pages with persistent background traffic (chat widgets, analytics) even
- * after the response we actually care about has already arrived.
- */
-export async function waitUntil(
-  condition: () => boolean,
-  timeoutMs: number,
-  pollIntervalMs = 100,
-): Promise<void> {
-  const start = Date.now();
-  while (!condition() && Date.now() - start < timeoutMs) {
-    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-  }
-}
+const USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
 export interface AuthenticatorOptions {
-  readonly loginUrl: string;
-  readonly tokenUrl: string;
   readonly authorizeUrl: string;
-  readonly artifactsDir: string;
+  readonly sessionStartUrl: string;
+  readonly tokenUrl: string;
+  readonly clientId: string;
+  readonly redirectUri: string;
+  readonly scope: string;
   readonly silentRenewalSupported: boolean;
   readonly logger: Logger;
-  readonly headless?: boolean;
+  readonly fetchImpl?: FetchLike;
 }
 
 /**
- * Drives the real portal login with a headless browser. NEVER retries a failed
- * login: the portal counts attempts server-side. Only smoke-tested, since a
- * unit test would need a real browser and real credentials.
+ * Drives the portal login over plain HTTP (mint session-start + OIDC/PKCE
+ * code exchange) — no browser involved. Replaces the earlier Playwright-based
+ * implementation, which broke when the portal's consent dialog changed
+ * (2026-07-22 incident: TransientNetworkError, a dip-consent overlay blocked
+ * the submit button indefinitely). NEVER retries a failed login: the portal
+ * counts attempts server-side (userinfo.loginErrorCount).
  */
 export class VodafoneAuthenticator {
   readonly #options: AuthenticatorOptions;
+  readonly #fetch: FetchLike;
 
   constructor(options: AuthenticatorOptions) {
     this.#options = options;
+    this.#fetch = options.fetchImpl ?? fetch;
   }
 
   async fullLogin(credentials: AccountCredentials): Promise<AuthSession> {
     try {
-      const browser = await chromium.launch({ headless: this.#options.headless ?? true });
-      try {
-        return await this.runLogin(browser, credentials);
-      } finally {
-        await browser.close();
-      }
+      const verifier = generateCodeVerifier();
+      const anonymousJar = await this.startAuthorize(verifier);
+      const authenticatedJar = await this.submitCredentials(credentials, anonymousJar);
+      const { code, jar } = await this.requestCode(verifier, authenticatedJar);
+      return await this.exchangeCode(code, verifier, jar);
     } catch (error) {
-      throw this.mapUnexpected(error, "Browser login failed");
+      throw this.mapUnexpected(error);
     }
   }
 
   async silentRenewal(existing: AuthSession): Promise<AuthSession> {
     if (!this.#options.silentRenewalSupported) {
-      // Confirmed unsupported by the smoke experiment: force a full login.
       throw new SessionExpiredError("Silent renewal is not supported by the portal");
     }
+    let jar: CookieJar;
     try {
-      const browser = await chromium.launch({ headless: this.#options.headless ?? true });
-      try {
-        return await this.runSilentRenewal(browser, existing);
-      } finally {
-        await browser.close();
-      }
+      jar = parseCookieJar(existing.cookies);
+    } catch (cause) {
+      throw new SessionExpiredError("Stored cookies could not be parsed", { cause });
+    }
+    try {
+      const verifier = generateCodeVerifier();
+      const { code, jar: refreshedJar } = await this.requestCode(verifier, jar);
+      return await this.exchangeCode(code, verifier, refreshedJar);
     } catch (error) {
-      throw this.mapUnexpected(error, "Browser silent renewal failed");
+      throw this.mapUnexpected(error);
     }
   }
 
-  private async runLogin(browser: Browser, credentials: AccountCredentials): Promise<AuthSession> {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    await page.goto(this.#options.loginUrl);
-    await page
-      .locator(loginSelectors.cookieRejectButton)
-      .click({ timeout: 5_000 })
-      .catch(() => {
-        // Consent may already be stored or not shown in all regions.
-      });
-    await page.locator(loginSelectors.usernameInput).waitFor({ state: "visible", timeout: 30_000 });
-    await page.fill(loginSelectors.usernameInput, credentials.username);
-    await page.fill(loginSelectors.passwordInput, credentials.password);
-
-    // Attach the listener only now, right before the action that actually
-    // triggers the login token exchange. The portal fires a silent SSO probe
-    // against the same token endpoint while the account page loads (before
-    // any credentials are entered); registering earlier let that unrelated
-    // response satisfy the wait below and short-circuit fullLogin() with an
-    // unauthenticated token — the API then rejects it with 401 on first use.
-    let tokenBody: unknown;
-    page.on("response", async (response) => {
-      if (
-        response.url().startsWith(this.#options.tokenUrl) &&
-        response.request().method() === "POST"
-      ) {
-        const body = await response.json().catch(() => undefined);
-        this.#options.logger.debug(
-          {
-            status: response.status(),
-            keys: body !== null && typeof body === "object" ? Object.keys(body) : typeof body,
-          },
-          "captured login token response",
-        );
-        tokenBody = body;
-      }
+  /** Step 1: an anonymous prompt=none authorize call, purely to plant the portal's mint session cookie. */
+  private async startAuthorize(codeVerifier: string): Promise<CookieJar> {
+    const challenge = codeChallengeFromVerifier(codeVerifier);
+    const response = await this.#fetch(this.buildAuthorizeUrl(challenge), {
+      redirect: "manual",
+      headers: { "user-agent": USER_AGENT },
     });
-
-    await page
-      .locator(loginSelectors.submitButton)
-      .filter({ hasText: /Anmelden/i })
-      .click();
-    // networkidle is unreliable on this portal — background traffic (chat
-    // widget, analytics) can keep it from ever firing. Wait for the actual
-    // signal instead: the token response captured by the listener above.
-    await waitUntil(() => tokenBody !== undefined, 30_000);
-
-    if (tokenBody === undefined) {
-      await this.saveTrace(context, "login-failed");
-      throw new AuthenticationFailedError(
-        "Login did not yield a token — credentials rejected or the form changed",
+    if (response.status !== 302) {
+      throw new TransientNetworkError(
+        `Unexpected status ${response.status} establishing the login session`,
       );
     }
-
-    const storageState = JSON.stringify(await context.storageState());
-    return parseTokenResponse(tokenBody, storageState, Math.floor(Date.now() / 1000));
+    return parseSetCookiePairs(response.headers.getSetCookie());
   }
 
-  private async runSilentRenewal(browser: Browser, existing: AuthSession): Promise<AuthSession> {
-    const context = await browser.newContext({
-      storageState: JSON.parse(existing.storageState) as NonNullable<
-        BrowserContextOptions["storageState"]
-      >,
+  /** Step 2: POST the credentials to the portal's own login endpoint. */
+  private async submitCredentials(
+    credentials: AccountCredentials,
+    jar: CookieJar,
+  ): Promise<CookieJar> {
+    const response = await this.#fetch(this.#options.sessionStartUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+        cookie: cookieHeader(jar),
+        referer: "https://www.vodafone.de/meinvodafone/account/login",
+        "user-agent": USER_AGENT,
+      },
+      body: JSON.stringify({
+        authnIdentifier: credentials.username,
+        credential: credentials.password,
+        context: "",
+        conversation: "",
+        targetURL: "",
+      }),
     });
-    const page = await context.newPage();
-
-    let tokenBody: unknown;
-    page.on("response", async (response) => {
-      if (
-        response.url().startsWith(this.#options.tokenUrl) &&
-        response.request().method() === "POST"
-      ) {
-        tokenBody = await response.json().catch(() => undefined);
-      }
-    });
-
-    await page.goto(this.#options.authorizeUrl);
-    // Same rationale as runLogin: wait for the token response, not for
-    // networkidle, which background portal traffic can keep from firing.
-    await waitUntil(() => tokenBody !== undefined, 30_000);
-
-    if (tokenBody === undefined) {
-      throw new SessionExpiredError("Silent renewal produced no token; a full login is required");
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      this.#options.logger.warn(
+        { status: response.status, body },
+        "vodafone session/start rejected the login",
+      );
+      throw this.mapSessionStartFailure(response.status);
     }
-
-    const storageState = JSON.stringify(await context.storageState());
-    return parseTokenResponse(tokenBody, storageState, Math.floor(Date.now() / 1000));
+    return mergeCookies(jar, parseSetCookiePairs(response.headers.getSetCookie()));
   }
 
-  /**
-   * Playwright failures (launch, navigation, DNS, timeouts) are transient
-   * infrastructure faults: map them like the api client maps thrown fetches,
-   * so a portal outage ends as a failed run, not a crashed service. Deliberate
-   * domain errors (auth failed, session expired) pass through untouched.
-   */
-  private mapUnexpected(error: unknown, message: string): AppError {
+  /** Step 3: a second prompt=none authorize call, now authenticated — yields the authorization code. */
+  private async requestCode(
+    codeVerifier: string,
+    jar: CookieJar,
+  ): Promise<{ code: string; jar: CookieJar }> {
+    const challenge = codeChallengeFromVerifier(codeVerifier);
+    const response = await this.#fetch(this.buildAuthorizeUrl(challenge), {
+      redirect: "manual",
+      headers: { cookie: cookieHeader(jar), "user-agent": USER_AGENT },
+    });
+    if (response.status !== 302) {
+      throw new SessionExpiredError(
+        `Authorize did not redirect (HTTP ${response.status}) — session is not valid`,
+      );
+    }
+    const location = response.headers.get("location");
+    const code = location === null ? null : new URL(location).searchParams.get("code");
+    if (code === null) {
+      throw new SessionExpiredError("Authorize redirect carried no authorization code");
+    }
+    return { code, jar: mergeCookies(jar, parseSetCookiePairs(response.headers.getSetCookie())) };
+  }
+
+  /** Step 4: exchange the authorization code for an access token. */
+  private async exchangeCode(
+    code: string,
+    codeVerifier: string,
+    jar: CookieJar,
+  ): Promise<AuthSession> {
+    const query = new URLSearchParams({
+      client_id: this.#options.clientId,
+      grant_type: "authorization_code",
+      code,
+      code_verifier: codeVerifier,
+      redirect_uri: this.#options.redirectUri,
+    });
+    const response = await this.#fetch(`${this.#options.tokenUrl}?${query.toString()}`, {
+      method: "POST",
+      headers: { accept: "application/json", "user-agent": USER_AGENT },
+    });
+    if (response.status >= 500) {
+      throw new TransientNetworkError(
+        `Portal returned HTTP ${response.status} exchanging the code`,
+      );
+    }
+    if (!response.ok) {
+      throw new SessionExpiredError(
+        `Portal rejected the authorization code (HTTP ${response.status})`,
+      );
+    }
+    const raw: unknown = await response.json().catch(() => undefined);
+    return parseTokenResponse(raw, serializeCookies(jar), Math.floor(Date.now() / 1000));
+  }
+
+  private buildAuthorizeUrl(codeChallenge: string): string {
+    const url = new URL(this.#options.authorizeUrl);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", this.#options.clientId);
+    url.searchParams.set("scope", this.#options.scope);
+    url.searchParams.set("redirect_uri", this.#options.redirectUri);
+    url.searchParams.set("code_challenge", codeChallenge);
+    url.searchParams.set("code_challenge_method", "S256");
+    url.searchParams.set("prompt", "none");
+    return url.toString();
+  }
+
+  private mapSessionStartFailure(status: number): AppError {
+    if (status === 429)
+      return new RateLimitedError("Portal returned HTTP 429 starting the session");
+    if (status >= 500) {
+      return new TransientNetworkError(`Portal returned HTTP ${status} starting the session`);
+    }
+    return new AuthenticationFailedError(`Portal rejected the credentials (HTTP ${status})`);
+  }
+
+  private mapUnexpected(error: unknown): AppError {
     if (error instanceof AppError) return error;
-    return new TransientNetworkError(message, { cause: error });
-  }
-
-  private async saveTrace(
-    context: Awaited<ReturnType<Browser["newContext"]>>,
-    label: string,
-  ): Promise<void> {
-    // A trace holds tokens and cookies (design spec section 8): 0600 dir, never
-    // posted to issues. Retention/cleanup is M4's job.
-    mkdirSync(this.#options.artifactsDir, { recursive: true, mode: 0o700 });
-    const path = join(this.#options.artifactsDir, `${label}-${Date.now()}.zip`);
-    await context.tracing.stop({ path }).catch(() => undefined);
-    this.#options.logger.warn({ artifact: path }, "saved login failure trace");
+    return new TransientNetworkError("Vodafone login failed", { cause: error });
   }
 }

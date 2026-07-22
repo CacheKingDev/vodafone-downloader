@@ -10,7 +10,7 @@ import {
 import type { AuthSession } from "../../domain/vodafone-session.js";
 import { type FetchLike, VodafoneApiClient } from "./api-client.js";
 
-const session: AuthSession = { accessToken: "tok", expiresAt: 9_999_999_999, storageState: "{}" };
+const session: AuthSession = { accessToken: "tok", expiresAt: 9_999_999_999, cookies: "{}" };
 
 const fixture = (name: string): unknown =>
   JSON.parse(readFileSync(join(import.meta.dirname, "fixtures", name), "utf8"));

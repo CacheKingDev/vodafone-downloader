@@ -13,7 +13,6 @@ services:
     environment:
       NODE_ENV: "production"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
-      # Keep enough of the 1 GiB container limit available for Chromium.
       NODE_OPTIONS: "--max-old-space-size=256"
       # Required. Put ADMIN_PASSWORD in a local .env file or export it before
       # starting Compose; no insecure password is baked into this file.

@@ -27,19 +27,15 @@ RUN npm prune --omit=dev
 # ---------------------------------------------------------------------------
 FROM node:24-slim AS runtime
 WORKDIR /app
-ENV NODE_ENV=production \
-    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV NODE_ENV=production
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 
-# Install system packages and the smaller Chromium headless shell in one layer.
-# The application never launches a headed browser in production. Keeping these
-# operations together also prevents superseded apt files from surviving in an
-# earlier image layer.
+# Install system packages needed at runtime. The application never launches
+# a browser in production anymore (HTTP-only login, 2026-07-22).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends smbclient \
-    && npm exec -- playwright install --with-deps --only-shell chromium \
     && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/*
 
 COPY --from=build /app/dist ./dist

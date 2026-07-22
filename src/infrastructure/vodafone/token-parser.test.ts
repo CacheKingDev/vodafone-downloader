@@ -9,7 +9,7 @@ describe("parseTokenResponse", () => {
     const session = parseTokenResponse(raw, "{}", 1000);
     expect(session.accessToken).toBe("abc");
     expect(session.expiresAt).toBe(4600);
-    expect(session.storageState).toBe("{}");
+    expect(session.cookies).toBe("{}");
   });
 
   it("rejects a malformed token response", () => {

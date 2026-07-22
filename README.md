@@ -14,7 +14,7 @@ Automatically downloads invoices from the [MeinVodafone](https://www.vodafone.de
 
 ## ✨ Features
 
-- 🔑 **Automatic login** via Playwright against the real customer portal, with session reuse
+- 🔑 **Automatic login** via a plain HTTP/PKCE flow against the real customer portal, with session reuse
 - 👥 **Multiple accounts** managed at once
 - ⏰ **Scheduled runs** via cron expression (`croner`), plus a manual on-demand run
 - 💾 **Multiple storage targets**: local, SMB, FTP/FTPS, SFTP (password or key), and WebDAV

@@ -38,7 +38,6 @@
     "htmx.org": "^2.0.10",
     "pino": "^9.6.0",
     "pino-roll": "^4.0.0",
-    "playwright": "^1.61.1",
     "ssh2-sftp-client": "^12.1.1",
     "webdav": "^5.10.0",
     "zod": "^4.0.5"

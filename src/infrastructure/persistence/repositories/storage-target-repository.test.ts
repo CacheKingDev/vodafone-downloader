@@ -247,3 +247,34 @@ describe("DrizzleStorageTargetRepository.setDisabled/recordTestResult/delete", (
     expect(await repo.findById(id)).toBeUndefined();
   });
 });
+
+describe("DrizzleStorageTargetRepository.listEnabledPaperlessTargets", () => {
+  it("returns only enabled paperless targets, decrypted", async () => {
+    const enabledId = await repo.create({
+      name: "Paperless aktiv",
+      purpose: "export",
+      description: null,
+      config: paperlessConfig,
+      status: "connected",
+    });
+    const disabledId = await repo.create({
+      name: "Paperless deaktiviert",
+      purpose: "export",
+      description: null,
+      config: paperlessConfig,
+      status: "connected",
+    });
+    await repo.setDisabled(disabledId, true);
+    await repo.create({
+      name: "Lokal",
+      purpose: "document",
+      description: null,
+      config: { backend: "local" },
+      status: "connected",
+    });
+
+    const targets = await repo.listEnabledPaperlessTargets();
+    expect(targets.map((t) => t.id)).toEqual([enabledId]);
+    expect(targets[0]?.config).toEqual(paperlessConfig);
+  });
+});

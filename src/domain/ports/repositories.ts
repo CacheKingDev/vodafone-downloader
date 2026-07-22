@@ -229,6 +229,8 @@ export interface DocumentExportRepository {
 /** Narrow read path used by sync and downloads — resolving the active target's config. */
 export interface StorageTargetRepository {
   findDefault(): Promise<StorageTarget | undefined>;
+  /** Enabled (status != 'disabled') targets with backend='paperless', full config decrypted. */
+  listEnabledPaperlessTargets(): Promise<StorageTarget[]>;
 }
 
 export interface StorageTargetUiRepository extends StorageTargetRepository {

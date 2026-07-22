@@ -21,6 +21,7 @@ artifacts/
 # Superpowers-Arbeitsdateien (Ledger, Briefings, Review-Pakete)
 .superpowers/
 .local/
+.worktrees/
 
 .env
 .env.*

@@ -9,9 +9,7 @@ import {
 
 describe("parseSetCookiePairs", () => {
   it("extracts name/value, ignoring attributes", () => {
-    expect(
-      parseSetCookiePairs(["sess=abc123; Path=/; HttpOnly", "id=xyz; Max-Age=3600"]),
-    ).toEqual([
+    expect(parseSetCookiePairs(["sess=abc123; Path=/; HttpOnly", "id=xyz; Max-Age=3600"])).toEqual([
       { name: "sess", value: "abc123" },
       { name: "id", value: "xyz" },
     ]);

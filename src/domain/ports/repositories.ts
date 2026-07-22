@@ -194,6 +194,34 @@ export interface MigrationRepository {
   failMigration(id: number, message: string): Promise<void>;
 }
 
+/** One document queued for export to one Paperless-like target — state=stored, no successful export row yet. */
+export interface ExportCandidate {
+  readonly documentId: number;
+  readonly relativePath: string;
+  readonly accountLabel: string;
+  readonly invoiceNumber: string;
+  readonly issuedOn: string;
+}
+
+/**
+ * Tracks per-(document, storage target) export outcomes for backends that
+ * receive a one-way copy (Paperless-ngx). Absence of a row means "not yet
+ * attempted" — there is no separate "pending" status.
+ */
+export interface DocumentExportRepository {
+  /** invoice_document rows in state=stored without an 'uploaded' row for this target. */
+  listExportCandidates(storageTargetId: number): Promise<ExportCandidate[]>;
+  recordSuccess(documentId: number, storageTargetId: number, attemptedAtSeconds: number): Promise<void>;
+  recordFailure(
+    documentId: number,
+    storageTargetId: number,
+    message: string,
+    attemptedAtSeconds: number,
+  ): Promise<void>;
+  /** True only if documentId has an 'uploaded' row for every id in storageTargetIds. */
+  isFullyExported(documentId: number, storageTargetIds: readonly number[]): Promise<boolean>;
+}
+
 /** Narrow read path used by sync and downloads — resolving the active target's config. */
 export interface StorageTargetRepository {
   findDefault(): Promise<StorageTarget | undefined>;

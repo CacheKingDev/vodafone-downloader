@@ -1,4 +1,4 @@
-import { eq, ne } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { ConfigError, PersistenceError } from "../../../domain/errors.js";
 import type { StorageTargetUiRepository } from "../../../domain/ports/repositories.js";
 import { describeStorageDestination, type StorageConfig } from "../../../domain/storage-config.js";
@@ -45,6 +45,15 @@ export class DrizzleStorageTargetRepository implements StorageTargetUiRepository
       .where(eq(storageTarget.isDefault, true))
       .get();
     return row === undefined ? undefined : this.#toTarget(row);
+  }
+
+  async listEnabledPaperlessTargets(): Promise<StorageTarget[]> {
+    const rows = this.#db
+      .select()
+      .from(storageTarget)
+      .where(and(eq(storageTarget.backend, "paperless"), ne(storageTarget.status, "disabled")))
+      .all();
+    return rows.map((row) => this.#toTarget(row));
   }
 
   async nameExists(name: string, excludingId?: number): Promise<boolean> {

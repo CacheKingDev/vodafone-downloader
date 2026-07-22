@@ -34,6 +34,7 @@ function makeTargets(target: StorageTarget | undefined): StorageTargetUiReposito
     recordTestResult: vi.fn(async () => undefined),
     setDefault: vi.fn(async () => undefined),
     setDisabled: vi.fn(async () => undefined),
+    listEnabledPaperlessTargets: vi.fn(async () => []),
     delete: vi.fn(async () => undefined),
   };
 }

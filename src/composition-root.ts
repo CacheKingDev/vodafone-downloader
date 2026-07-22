@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
+import { exportToPaperless } from "./application/export-to-paperless.js";
 import { StorageMigrationRunner } from "./application/migrate-storage.js";
 import { type RunAllResult, RunCoordinator, type RunSummary } from "./application/run-sync.js";
 import { type SyncReport, syncAccount } from "./application/sync-invoices.js";
@@ -14,12 +15,14 @@ import { SessionStore } from "./infrastructure/auth/session-store.js";
 import { Cipher } from "./infrastructure/crypto/cipher.js";
 import { loadOrCreateKey } from "./infrastructure/crypto/key-store.js";
 import { createLogger, type Logger } from "./infrastructure/logging/logger.js";
+import { PaperlessClient } from "./infrastructure/paperless/paperless-client.js";
 import {
   closeDatabase,
   createDatabase,
   type Database,
 } from "./infrastructure/persistence/database.js";
 import { DrizzleAccountRepository } from "./infrastructure/persistence/repositories/account-repository.js";
+import { DrizzleDocumentExportRepository } from "./infrastructure/persistence/repositories/document-export-repository.js";
 import { DrizzleInvoiceRepository } from "./infrastructure/persistence/repositories/invoice-repository.js";
 import { DrizzleMigrationRepository } from "./infrastructure/persistence/repositories/migration-repository.js";
 import { DrizzleRunRepository } from "./infrastructure/persistence/repositories/run-repository.js";
@@ -85,6 +88,7 @@ export async function createApplication(
   const invoices = new DrizzleInvoiceRepository(db);
   const settings = new DrizzleSettingsRepository(db);
   const storageTargets = new DrizzleStorageTargetRepository(db, cipher);
+  const documentExports = new DrizzleDocumentExportRepository(db);
   await ensureInitialStorageTarget(db, cipher, storageTargets);
   const buildStorage = (target: StorageConfig): FileStorage =>
     buildFileStorage(target, config.downloadsDir);
@@ -127,13 +131,37 @@ export async function createApplication(
     );
   };
 
+  const runPaperlessExport = (): Promise<void> =>
+    exportToPaperless({
+      targets: storageTargets,
+      exports: documentExports,
+      resolveDefaultStorage: () => resolveDefaultFileStorage(storageTargets, config.downloadsDir),
+      buildPaperlessClient: (target) => {
+        if (target.config.backend !== "paperless") {
+          throw new Error("listEnabledPaperlessTargets returned a non-paperless target");
+        }
+        return new PaperlessClient({
+          url: target.config.paperless.url,
+          apiToken: target.config.paperless.apiToken,
+          rejectUnauthorized: target.config.paperless.rejectUnauthorized,
+        });
+      },
+      logger,
+    });
+
   const runs = new DrizzleRunRepository(db);
 
   // Reconcile interrupted runs from a crashed or killed previous process:
   // anything started more than 15 min ago without a finish is "failed (interrupted)".
   await runs.orphanCleanup(15 * 60 * 1000);
 
-  const coordinator = new RunCoordinator({ accounts, runs, sync, logger });
+  const coordinator = new RunCoordinator({
+    accounts,
+    runs,
+    sync,
+    exportToPaperless: runPaperlessExport,
+    logger,
+  });
   const migrations = new DrizzleMigrationRepository(db);
   const migrationRunner = new StorageMigrationRunner({
     migrations,

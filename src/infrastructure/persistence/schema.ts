@@ -92,7 +92,7 @@ export const storageTarget = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     name: text("name").notNull(),
     backend: text("backend", {
-      enum: ["local", "smb", "ftp", "sftp", "webdav"],
+      enum: ["local", "smb", "ftp", "sftp", "webdav", "paperless"],
     }).notNull(),
     purpose: text("purpose", { enum: ["document", "backup", "export"] })
       .notNull()
@@ -148,6 +148,25 @@ export const storageMigration = sqliteTable("storage_migration", {
   errorMessage: text("error_message"),
 });
 
+export const invoiceDocumentExport = sqliteTable(
+  "invoice_document_export",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    documentId: integer("document_id")
+      .notNull()
+      .references(() => invoiceDocument.id, { onDelete: "cascade" }),
+    storageTargetId: integer("storage_target_id")
+      .notNull()
+      .references(() => storageTarget.id, { onDelete: "cascade" }),
+    status: text("status", { enum: ["uploaded", "failed"] }).notNull(),
+    errorMessage: text("error_message"),
+    attemptedAt: integer("attempted_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("invoice_document_export_unique").on(table.documentId, table.storageTargetId),
+  ],
+);
+
 export const adminSession = sqliteTable("admin_session", {
   id: text("id").primaryKey(),
   tokenHash: text("token_hash").notNull(),
@@ -172,4 +191,6 @@ export type StorageMigrationRow = typeof storageMigration.$inferSelect;
 export type NewStorageMigrationRow = typeof storageMigration.$inferInsert;
 export type StorageTargetRow = typeof storageTarget.$inferSelect;
 export type NewStorageTargetRow = typeof storageTarget.$inferInsert;
+export type InvoiceDocumentExportRow = typeof invoiceDocumentExport.$inferSelect;
+export type NewInvoiceDocumentExportRow = typeof invoiceDocumentExport.$inferInsert;
 export type SettingRow = typeof setting.$inferSelect;

@@ -354,3 +354,67 @@ function sftpPayload(csrfToken: string): Record<string, string> {
     _csrf: csrfToken,
   };
 }
+
+function paperlessPayload(csrfToken: string): Record<string, string> {
+  return {
+    type: "paperless",
+    name: "Paperless",
+    paperlessUrl: "https://paperless.example.com",
+    paperlessApiToken: "tok_abc123",
+    _csrf: csrfToken,
+  };
+}
+
+describe("Paperless storage target", () => {
+  it("hides the purpose selector and the default checkbox on the create form", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+
+    const response = await app.inject({ method: "GET", url: "/storage/new/paperless" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain("paperlessUrl");
+    expect(response.body).not.toContain('name="purpose"');
+    expect(response.body).not.toContain('name="isDefault"');
+  });
+
+  it("saves a paperless target with purpose=export regardless of form input, and ignores isDefault", async () => {
+    const { app: testApp, targets } = await buildTestApp();
+    app = testApp;
+    const form = await app.inject({ method: "GET", url: "/storage/new/paperless" });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/storage",
+      cookies: cookieHeader(form),
+      payload: {
+        ...paperlessPayload(extractCsrfToken(form.body)),
+        purpose: "document",
+        isDefault: "on",
+        action: "save_untested",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const list = await targets.list();
+    const saved = list.find((t) => t.name === "Paperless");
+    expect(saved).toMatchObject({ purpose: "export", isDefault: false, backend: "paperless" });
+  });
+
+  it("does not offer 'Standard setzen' for a paperless row", async () => {
+    const { app: testApp } = await buildTestApp();
+    app = testApp;
+    const form = await app.inject({ method: "GET", url: "/storage/new/paperless" });
+    await app.inject({
+      method: "POST",
+      url: "/storage",
+      cookies: cookieHeader(form),
+      payload: { ...paperlessPayload(extractCsrfToken(form.body)), action: "save_untested" },
+    });
+
+    const overview = await app.inject({ method: "GET", url: "/storage" });
+    const paperlessRowStart = overview.body.indexOf("Paperless<");
+    const rowSlice = overview.body.slice(paperlessRowStart, paperlessRowStart + 800);
+    expect(rowSlice).not.toContain("Standard setzen");
+  });
+});

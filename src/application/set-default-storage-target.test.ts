@@ -40,6 +40,7 @@ function makeTargets(
     recordTestResult: vi.fn(async () => undefined),
     setDefault: vi.fn(async () => undefined),
     setDisabled: vi.fn(async () => undefined),
+    listEnabledPaperlessTargets: vi.fn(async () => []),
     delete: vi.fn(async () => undefined),
   };
 }
@@ -78,6 +79,17 @@ describe("setDefaultStorageTarget", () => {
         "new_only",
       ),
     ).rejects.toThrow(/deaktiviertes/);
+  });
+
+  it("refuses to make a paperless target the default", async () => {
+    const targets = makeTargets(makeTarget({ backend: "paperless" }), undefined);
+    await expect(
+      setDefaultStorageTarget(
+        { targets, migrations: makeMigrations(), runMigration: vi.fn() },
+        2,
+        "new_only",
+      ),
+    ).rejects.toThrow(/Paperless/);
   });
 
   it("switches immediately in new_only mode without starting a migration", async () => {

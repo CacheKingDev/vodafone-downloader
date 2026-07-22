@@ -3,6 +3,7 @@ import type { StorageTargetRepository } from "../../domain/ports/repositories.js
 import type { StorageConfig } from "../../domain/storage-config.js";
 import { AtomicFileStorage } from "./atomic-file-storage.js";
 import { FtpFileStorage } from "./ftp-file-storage.js";
+import { PaperlessFileStorage } from "./paperless-file-storage.js";
 import { SftpFileStorage } from "./sftp-file-storage.js";
 import { SmbFileStorage } from "./smb-file-storage.js";
 import { WebDavFileStorage } from "./webdav-file-storage.js";
@@ -19,6 +20,8 @@ export function buildFileStorage(config: StorageConfig, downloadsDir: string): F
       return new SftpFileStorage(config.sftp);
     case "webdav":
       return new WebDavFileStorage(config.webdav);
+    case "paperless":
+      return new PaperlessFileStorage(config.paperless);
   }
 }
 

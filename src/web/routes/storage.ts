@@ -16,6 +16,7 @@ import type {
 } from "../../domain/ports/repositories.js";
 import type {
   FtpConfig,
+  PaperlessConfig,
   SftpConfig,
   SmbConfig,
   StorageBackendKind,
@@ -149,13 +150,13 @@ export function registerStorageRoutes(app: FastifyInstance, options: StorageRout
         { targets: options.targets },
         {
           name: request.body.name ?? "",
-          purpose: parsePurpose(request.body.purpose),
+          purpose: type === "paperless" ? "export" : parsePurpose(request.body.purpose),
           description: emptyToNull(request.body.description),
           config,
           tested: testResult?.success === true,
         },
       );
-      if (request.body.isDefault === "on") {
+      if (request.body.isDefault === "on" && type !== "paperless") {
         await options.targets.setDefault(id);
       }
       await sendStorageList(request, reply, options, {
@@ -273,7 +274,7 @@ export function registerStorageRoutes(app: FastifyInstance, options: StorageRout
       try {
         await updateStorageTarget({ targets: options.targets }, id, {
           name: request.body.name ?? "",
-          purpose: parsePurpose(request.body.purpose),
+          purpose: target.backend === "paperless" ? "export" : parsePurpose(request.body.purpose),
           description: emptyToNull(request.body.description),
           config,
         });
@@ -497,6 +498,7 @@ function parseBackendType(value: string | undefined): StorageBackendKind | undef
     value === "sftp" ||
     value === "ftp" ||
     value === "webdav" ||
+    value === "paperless" ||
     value === "local"
   ) {
     return value;
@@ -544,9 +546,38 @@ function buildConfigFromForm(
       return buildFtpConfig(body, existing?.backend === "ftp" ? existing.ftp : undefined);
     case "webdav":
       return buildWebDavConfig(body, existing?.backend === "webdav" ? existing.webdav : undefined);
+    case "paperless":
+      return buildPaperlessConfig(
+        body,
+        existing?.backend === "paperless" ? existing.paperless : undefined,
+      );
     case "local":
       return undefined;
   }
+}
+
+function buildPaperlessConfig(
+  body: StorageFormBody,
+  existing?: PaperlessConfig,
+): StorageConfig | undefined {
+  const url = (body.paperlessUrl ?? "").trim();
+  try {
+    new URL(url);
+  } catch {
+    return undefined;
+  }
+  const changeSecrets = body.changeSecrets === "on" || existing === undefined;
+  const apiToken = changeSecrets ? (body.paperlessApiToken ?? "").trim() : existing.apiToken;
+  if (apiToken === "") return undefined;
+  return {
+    backend: "paperless",
+    paperless: {
+      url,
+      apiToken,
+      rejectUnauthorized: body.paperlessRejectUnauthorized !== "false",
+      deleteAfterUpload: body.paperlessDeleteAfterUpload === "on",
+    },
+  };
 }
 
 function buildSmbConfig(body: StorageFormBody, existing?: SmbConfig): StorageConfig | undefined {
@@ -696,6 +727,8 @@ function targetHasSecret(config: StorageConfig): boolean {
         : config.webdav.auth.kind === "bearer"
           ? config.webdav.auth.token !== ""
           : false;
+    case "paperless":
+      return config.paperless.apiToken !== "";
   }
 }
 
@@ -735,6 +768,12 @@ function valuesFromConfig(config: StorageConfig): StorageFormValues {
         webdavAuthKind: config.webdav.auth.kind,
         webdavUsername: config.webdav.auth.kind === "basic" ? config.webdav.auth.username : "",
         webdavRejectUnauthorized: config.webdav.rejectUnauthorized ? "true" : "false",
+      };
+    case "paperless":
+      return {
+        paperlessUrl: config.paperless.url,
+        paperlessRejectUnauthorized: config.paperless.rejectUnauthorized ? "true" : "false",
+        paperlessDeleteAfterUpload: config.paperless.deleteAfterUpload ? "on" : "",
       };
   }
 }

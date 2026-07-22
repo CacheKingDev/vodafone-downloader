@@ -29,6 +29,9 @@ export async function setDefaultStorageTarget(
 ): Promise<SetDefaultStorageTargetResult> {
   const target = await deps.targets.findById(targetId);
   if (target === undefined) throw new Error("Speicherziel wurde nicht gefunden.");
+  if (target.backend === "paperless") {
+    throw new Error("Ein Paperless-Ziel kann nicht zum Standardspeicher werden.");
+  }
   if (target.status === "disabled") {
     throw new Error("Ein deaktiviertes Speicherziel kann nicht zum Standardspeicher werden.");
   }

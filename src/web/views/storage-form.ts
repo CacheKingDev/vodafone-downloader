@@ -23,6 +23,12 @@ const TYPE_CARDS: readonly { type: StorageBackendKind; title: string; descriptio
     title: "WebDAV",
     description: "Webbasierter Zugriff auf Cloud- und Dokumentenspeicher.",
   },
+  {
+    type: "paperless",
+    title: "Paperless-ngx",
+    description:
+      "Zusätzlicher Export bereits gespeicherter Rechnungen zu einer Paperless-ngx-Instanz.",
+  },
 ];
 
 export function storageTypePicker(): string {
@@ -276,6 +282,36 @@ function webdavFields(
   </div>`;
 }
 
+function paperlessFields(
+  values: StorageFormValues,
+  mode: "create" | "edit",
+  hasSecret: boolean,
+): string {
+  return `<div class="form-grid">
+    ${field(`
+    <label for="paperlessUrl">Server-URL</label>
+    <input id="paperlessUrl" name="paperlessUrl" type="url" required value="${escapeHtml(values.paperlessUrl ?? "")}" placeholder="https://paperless.example.com">`)}
+    ${secretField("paperlessApiToken", "paperlessApiToken", "API-Token", values, mode, hasSecret)}
+    ${field(
+      `
+    <details>
+      <summary>Erweiterte Einstellungen</summary>
+      <label>
+        <input type="checkbox" name="paperlessRejectUnauthorized" value="false"${values.paperlessRejectUnauthorized === "false" ? " checked" : ""}>
+        TLS-Zertifikat nicht prüfen
+      </label>
+      <p class="security-warning security-warning-danger">Unsicher: Die Identität des Servers kann nicht zuverlässig geprüft werden.</p>
+      <label>
+        <input type="checkbox" name="paperlessDeleteAfterUpload" value="on"${values.paperlessDeleteAfterUpload === "on" ? " checked" : ""}>
+        Nach erfolgreichem Upload am Speicherziel löschen
+      </label>
+      <p class="muted">Die Datei ist danach nur noch über Paperless einsehbar, nicht mehr über die Rechnungen-Ansicht dieser App.</p>
+    </details>`,
+      true,
+    )}
+  </div>`;
+}
+
 export function backendFields(
   type: StorageBackendKind,
   values: StorageFormValues,
@@ -291,6 +327,8 @@ export function backendFields(
       return ftpFields(values, mode, hasSecret);
     case "webdav":
       return webdavFields(values, mode, hasSecret);
+    case "paperless":
+      return paperlessFields(values, mode, hasSecret);
     case "local":
       return "";
   }
@@ -305,6 +343,7 @@ export interface StorageCreateFormOptions {
 
 export function storageCreateForm(options: StorageCreateFormOptions): string {
   const tested = options.testResult?.success === true;
+  const isPaperless = options.type === "paperless";
   return `
 <section>
   <h1>Speicherziel hinzufügen — ${escapeHtml(BACKEND_LABEL[options.type])}</h1>
@@ -313,15 +352,19 @@ export function storageCreateForm(options: StorageCreateFormOptions): string {
     <input type="hidden" name="_csrf" value="${escapeHtml(options.csrfToken)}">
     <input type="hidden" name="type" value="${options.type}">
     <div class="form-grid">
-      ${commonFields(options.values)}
-      ${field(
-        `
+      ${commonFields(options.values, !isPaperless)}
+      ${
+        isPaperless
+          ? ""
+          : field(
+              `
       <label>
         <input type="checkbox" name="isDefault" value="on"${options.values.isDefault === "on" ? " checked" : ""}>
         Als Standardspeicher verwenden
       </label>`,
-        true,
-      )}
+              true,
+            )
+      }
     </div>
     ${backendFields(options.type, options.values, "create", false)}
     ${testResultPanel(options.testResult)}
@@ -350,7 +393,7 @@ export function storageEditForm(options: StorageEditFormOptions): string {
   <h1>Speicherziel bearbeiten — ${escapeHtml(BACKEND_LABEL[options.type])}</h1>
   <form method="post" action="/storage/${options.id}" id="storage-form" class="wide-form" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore data-form-type="other" data-storage-form>
     <input type="hidden" name="_csrf" value="${escapeHtml(options.csrfToken)}">
-    <div class="form-grid">${commonFields(options.values)}</div>
+    <div class="form-grid">${commonFields(options.values, options.type !== "paperless")}</div>
     ${backendFields(options.type, options.values, "edit", options.hasSecret)}
     ${testResultPanel(options.testResult)}
     <div class="table-actions">

@@ -22,6 +22,7 @@ export interface CoordinatorDeps {
   readonly accounts: Pick<AccountRepository, "listSyncableIds">;
   readonly runs: RunRepository;
   readonly sync: (accountId: number) => Promise<SyncReport>;
+  readonly exportToPaperless: () => Promise<void>;
   readonly logger: RunLogger;
 }
 
@@ -51,6 +52,7 @@ export class RunCoordinator {
       for (const accountId of accountIds) {
         runs.push(await this.#runOne(accountId, trigger));
       }
+      await this.#runExport();
       return { started: true, runs };
     } finally {
       this.#busy = false;
@@ -64,9 +66,19 @@ export class RunCoordinator {
     }
     this.#busy = true;
     try {
-      return await this.#runOne(accountId, trigger);
+      const summary = await this.#runOne(accountId, trigger);
+      await this.#runExport();
+      return summary;
     } finally {
       this.#busy = false;
+    }
+  }
+
+  async #runExport(): Promise<void> {
+    try {
+      await this.#deps.exportToPaperless();
+    } catch (error) {
+      this.#deps.logger.error({ err: error }, "paperless export step crashed");
     }
   }
 

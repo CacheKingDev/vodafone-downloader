@@ -1,4 +1,4 @@
-export type StorageBackendKind = "local" | "smb" | "ftp" | "sftp" | "webdav";
+export type StorageBackendKind = "local" | "smb" | "ftp" | "sftp" | "webdav" | "paperless";
 
 export interface SmbConfig {
   readonly host: string;
@@ -64,12 +64,20 @@ export interface WebDavConfig {
   readonly rejectUnauthorized: boolean;
 }
 
+export interface PaperlessConfig {
+  readonly url: string;
+  readonly apiToken: string;
+  readonly rejectUnauthorized: boolean;
+  readonly deleteAfterUpload: boolean;
+}
+
 export type StorageConfig =
   | { readonly backend: "local" }
   | { readonly backend: "smb"; readonly smb: SmbConfig }
   | { readonly backend: "ftp"; readonly ftp: FtpConfig }
   | { readonly backend: "sftp"; readonly sftp: SftpConfig }
-  | { readonly backend: "webdav"; readonly webdav: WebDavConfig };
+  | { readonly backend: "webdav"; readonly webdav: WebDavConfig }
+  | { readonly backend: "paperless"; readonly paperless: PaperlessConfig };
 
 /**
  * A non-secret, human-readable "where does this point" string (host/path) —
@@ -88,6 +96,8 @@ export function describeStorageDestination(config: StorageConfig): string {
       return joinNonEmpty([`${config.sftp.host}:${config.sftp.port}`, config.sftp.path]);
     case "webdav":
       return joinNonEmpty([config.webdav.url, config.webdav.path]);
+    case "paperless":
+      return config.paperless.url;
   }
 }
 

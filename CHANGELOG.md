@@ -6,6 +6,16 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-07-22
+
+### Changed
+
+- Replaced the Playwright/Chromium-based portal login with a pure HTTP/PKCE flow — fixes account discovery failing in production when the portal's GDPR consent dialog blocked the login form, and removes the Chromium dependency from the Docker image
+
+### Fixed
+
+- Account discovery failing with HTTP 403 after a successful login, caused by an incomplete OIDC scope request (missing `user-data` and `user-subscriptions`)
+
 ## [1.0.0] - 2026-07-21
 
 First public release. The application is functionally complete for production self-hosting.

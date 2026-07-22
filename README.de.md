@@ -14,7 +14,7 @@ Lädt automatisch Rechnungen aus dem [MeinVodafone](https://www.vodafone.de/mein
 
 ## ✨ Funktionen
 
-- 🔑 **Automatischer Login** über Playwright gegen das echte Kundenportal, inklusive Session-Wiederverwendung
+- 🔑 **Automatischer Login** über einen reinen HTTP/PKCE-Flow gegen das echte Kundenportal, inklusive Session-Wiederverwendung
 - 👥 **Mehrere Konten** gleichzeitig verwalten
 - ⏰ **Geplante Läufe** per Cron-Ausdruck (`croner`), plus manueller Sofort-Lauf
 - 💾 **Mehrere Speicherziele**: lokal, SMB, FTP/FTPS, SFTP (Passwort oder Schlüssel) und WebDAV

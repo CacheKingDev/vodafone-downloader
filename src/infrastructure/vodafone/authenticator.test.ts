@@ -76,8 +76,8 @@ describe("VodafoneAuthenticator.fullLogin", () => {
         const headers = new Headers(init?.headers);
         expect(headers.get("cookie")).toBe("mint=anon123");
         const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-        expect(body["authnIdentifier"]).toBe("user1");
-        expect(body["credential"]).toBe("pw1");
+        expect(body.authnIdentifier).toBe("user1");
+        expect(body.credential).toBe("pw1");
         return jsonResponse(200, { ok: true });
       }
       if (url.startsWith(TOKEN_URL)) {

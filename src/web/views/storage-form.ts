@@ -204,10 +204,7 @@ function sftpFields(
 
 function ftpFields(values: StorageFormValues, mode: "create" | "edit", hasSecret: boolean): string {
   const secure = values.ftpSecure ?? "none";
-  const warning =
-    secure === "none"
-      ? `<p class="security-warning security-warning-danger">Unsicher: Unverschlüsseltes FTP überträgt Zugangsdaten und Dateien im Klartext.</p>`
-      : "";
+  const warning = `<p class="security-warning security-warning-danger" data-ftp-secure-warning${secure === "none" ? "" : " hidden"}>Unsicher: Unverschlüsseltes FTP überträgt Zugangsdaten und Dateien im Klartext.</p>`;
   return `<div class="form-grid">
     ${field(`
     <label for="ftpHost">Host</label>
@@ -229,7 +226,7 @@ function ftpFields(values: StorageFormValues, mode: "create" | "edit", hasSecret
       <option value="explicit"${secure === "explicit" ? " selected" : ""}>FTPS mit explizitem TLS</option>
       <option value="implicit"${secure === "implicit" ? " selected" : ""}>FTPS mit implizitem TLS</option>
     </select>`)}
-    ${warning === "" ? "" : field(warning, true)}
+    ${field(warning, true)}
   </div>`;
 }
 

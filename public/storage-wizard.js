@@ -58,11 +58,16 @@
     var form = event.target.closest("form");
     if (form === null) return;
     var portField = form.querySelector("[data-ftp-port]");
-    if (portField === null) return;
-    var currentIsKnownDefault = Object.values(KNOWN_FTP_PORTS).includes(portField.value);
-    if (portField.value === "" || currentIsKnownDefault) {
-      portField.value = KNOWN_FTP_PORTS[event.target.value] || portField.value;
+    if (portField !== null) {
+      var currentIsKnownDefault = Object.values(KNOWN_FTP_PORTS).includes(portField.value);
+      if (portField.value === "" || currentIsKnownDefault) {
+        portField.value = KNOWN_FTP_PORTS[event.target.value] || portField.value;
+      }
     }
+    // The unencrypted-FTP warning only applies to the "none" option; it must
+    // follow the live selection, not just the value the form was rendered with.
+    var warning = form.querySelector("[data-ftp-secure-warning]");
+    if (warning !== null) warning.hidden = event.target.value !== "none";
   });
 
   // "Speichern" stays disabled until the currently entered configuration has

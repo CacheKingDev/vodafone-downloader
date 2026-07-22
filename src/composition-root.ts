@@ -92,10 +92,13 @@ export async function createApplication(
   sessions.deleteExpired();
 
   // Portal endpoints (design spec section 3; HTTP-only login design doc
-  // 2026-07-22). clientId/redirectUri/scope are carried over from
-  // cbrand/vodafone-billing-downloader and NOT yet confirmed for our exact
-  // portal variant — see docs/superpowers/specs/2026-07-22-http-only-vodafone-login-design.md
-  // section 3. Correct here if scripts/smoke/vodafone-login.ts finds different values.
+  // 2026-07-22). clientId/redirectUri confirmed via a real browser login
+  // capture (2026-07-22); scope originally carried over from
+  // cbrand/vodafone-billing-downloader was missing "user-data" and
+  // "user-subscriptions" — without them, the OIDC token authenticates but the
+  // tmf-api/userinfo endpoint rejects it with HTTP 403
+  // (lib-mint-client.E403F_FORBIDDEN). Confirmed complete against the real
+  // portal's own authorize request.
   const authenticator = new VodafoneAuthenticator({
     authorizeUrl: "https://www.vodafone.de/mint/oidc/authorize",
     sessionStartUrl: "https://www.vodafone.de/mint/rest/v60/session/start",
@@ -103,7 +106,7 @@ export async function createApplication(
     clientId: "b0595a44-0726-11ec-9011-9457a55a403c",
     redirectUri: "https://www.vodafone.de/meinvodafone/services/",
     scope:
-      "openid profile webseal user-groups user-accounts validate-token update-email-username account",
+      "openid profile webseal user-groups user-accounts validate-token update-email-username account user-data user-subscriptions",
     silentRenewalSupported: true,
     logger,
   });

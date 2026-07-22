@@ -27,7 +27,7 @@ const authenticator = new VodafoneAuthenticator({
   clientId: "b0595a44-0726-11ec-9011-9457a55a403c",
   redirectUri: "https://www.vodafone.de/meinvodafone/services/",
   scope:
-    "openid profile webseal user-groups user-accounts validate-token update-email-username account",
+    "openid profile webseal user-groups user-accounts validate-token update-email-username account user-data user-subscriptions",
   silentRenewalSupported: true,
   logger,
 });

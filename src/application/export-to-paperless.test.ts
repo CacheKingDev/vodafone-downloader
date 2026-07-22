@@ -203,4 +203,61 @@ describe("exportToPaperless", () => {
 
     expect(storage.remove).not.toHaveBeenCalled();
   });
+
+  it("deletes once the last missing target succeeds, even though THAT target's own deleteAfterUpload is off", async () => {
+    // Regression test: target 10 (deleteAfterUpload=true) already succeeded in
+    // an earlier run, so it has no candidate left; target 20
+    // (deleteAfterUpload=false) is the one completing the set THIS run. The
+    // delete must still fire — gating the check on "the just-succeeded
+    // target's own flag" instead of "does any enabled target want delete"
+    // would silently never re-trigger it here.
+    const storage = makeStorage();
+    const targetWithDelete = makeTarget({
+      id: 10,
+      config: {
+        backend: "paperless",
+        paperless: {
+          url: "https://paperless.example.com",
+          apiToken: "tok",
+          rejectUnauthorized: true,
+          deleteAfterUpload: true,
+        },
+      },
+    });
+    const targetWithoutDelete = makeTarget({
+      id: 20,
+      config: {
+        backend: "paperless",
+        paperless: {
+          url: "https://paperless2.example.com",
+          apiToken: "tok2",
+          rejectUnauthorized: true,
+          deleteAfterUpload: false,
+        },
+      },
+    });
+    const exports: DocumentExportRepository & { isFullyExported: ReturnType<typeof vi.fn> } = {
+      listExportCandidates: vi.fn(async (storageTargetId: number) =>
+        storageTargetId === 20 ? [candidate()] : [],
+      ),
+      recordSuccess: vi.fn(async () => undefined),
+      recordFailure: vi.fn(async () => undefined),
+      isFullyExported: vi.fn(async () => true),
+    };
+    const uploader: PaperlessUploader = { upload: vi.fn(async () => undefined) };
+
+    await exportToPaperless({
+      targets: {
+        listEnabledPaperlessTargets: vi.fn(async () => [targetWithDelete, targetWithoutDelete]),
+      },
+      exports,
+      resolveDefaultStorage: vi.fn(async () => storage),
+      buildPaperlessClient: vi.fn(() => uploader),
+      logger: { warn: vi.fn() },
+      now: () => 1,
+    });
+
+    expect(exports.isFullyExported).toHaveBeenCalledWith(1, [10, 20]);
+    expect(storage.remove).toHaveBeenCalledWith("2026/r-1.pdf");
+  });
 });

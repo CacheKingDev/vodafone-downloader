@@ -9,6 +9,7 @@ export const BACKEND_LABEL: Record<StorageBackendKind, string> = {
   sftp: "SFTP",
   ftp: "FTP/FTPS",
   webdav: "WebDAV",
+  paperless: "Paperless-ngx",
 };
 
 /** Short form for the overview table, where "SMB/Windows-Freigabe" alone would blow out the column. */
@@ -18,6 +19,7 @@ const BACKEND_LABEL_SHORT: Record<StorageBackendKind, string> = {
   sftp: "SFTP",
   ftp: "FTP/FTPS",
   webdav: "WebDAV",
+  paperless: "Paperless",
 };
 
 export const PURPOSE_LABEL: Record<StoragePurpose, string> = {
@@ -76,9 +78,10 @@ export function storageTargetRow(
       ? ""
       : `<br><small class="muted">${escapeHtml(target.description)}</small>`;
 
-  const setDefaultAction = target.isDefault
-    ? ""
-    : `<form class="inline-form" hx-get="/storage/${target.id}/default-confirm" hx-target="#default-confirm-dialog" hx-swap="innerHTML">
+  const setDefaultAction =
+    target.isDefault || target.backend === "paperless"
+      ? ""
+      : `<form class="inline-form" hx-get="/storage/${target.id}/default-confirm" hx-target="#default-confirm-dialog" hx-swap="innerHTML">
         <button class="btn-secondary" type="submit">Standard setzen</button>
       </form>`;
 

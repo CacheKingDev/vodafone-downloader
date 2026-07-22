@@ -14,6 +14,7 @@ const TARGET_NAME: Record<StorageBackendKind, string> = {
   ftp: "FTP/FTPS",
   sftp: "SFTP",
   webdav: "WebDAV",
+  paperless: "Paperless-ngx",
 };
 
 /**

@@ -61,10 +61,21 @@ const webdavSchema = z.object({
   }),
 });
 
+const paperlessSchema = z.object({
+  backend: z.literal("paperless"),
+  paperless: z.object({
+    url: z.url(),
+    apiToken: z.string().min(1),
+    rejectUnauthorized: z.boolean(),
+    deleteAfterUpload: z.boolean(),
+  }),
+});
+
 export const storageConfigSchema = z.discriminatedUnion("backend", [
   z.object({ backend: z.literal("local") }),
   smbSchema,
   ftpSchema,
   sftpSchema,
   webdavSchema,
+  paperlessSchema,
 ]) satisfies z.ZodType<StorageConfig>;

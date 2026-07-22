@@ -24,6 +24,16 @@ const sftpConfig: StorageConfig = {
   },
 };
 
+const paperlessConfig: StorageConfig = {
+  backend: "paperless",
+  paperless: {
+    url: "https://paperless.example.com",
+    apiToken: "tok_abc123",
+    rejectUnauthorized: true,
+    deleteAfterUpload: true,
+  },
+};
+
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "vid-storage-target-"));
   db = createDatabase({ file: join(dir, "test.sqlite"), migrationsFolder: "./drizzle" });
@@ -61,6 +71,20 @@ describe("DrizzleStorageTargetRepository.create/findById", () => {
     });
     const target = await repo.findById(id);
     expect(target?.config).toEqual({ backend: "local" });
+  });
+
+  it("round-trips a paperless target's config", async () => {
+    const id = await repo.create({
+      name: "Paperless",
+      purpose: "export",
+      description: null,
+      config: paperlessConfig,
+      status: "untested",
+    });
+    const target = await repo.findById(id);
+    expect(target?.config).toEqual(paperlessConfig);
+    expect(target?.backend).toBe("paperless");
+    expect(target?.destination).toBe("https://paperless.example.com");
   });
 
   it("does not store plaintext credentials", async () => {

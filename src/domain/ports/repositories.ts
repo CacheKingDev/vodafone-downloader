@@ -211,7 +211,11 @@ export interface ExportCandidate {
 export interface DocumentExportRepository {
   /** invoice_document rows in state=stored without an 'uploaded' row for this target. */
   listExportCandidates(storageTargetId: number): Promise<ExportCandidate[]>;
-  recordSuccess(documentId: number, storageTargetId: number, attemptedAtSeconds: number): Promise<void>;
+  recordSuccess(
+    documentId: number,
+    storageTargetId: number,
+    attemptedAtSeconds: number,
+  ): Promise<void>;
   recordFailure(
     documentId: number,
     storageTargetId: number,

@@ -6,6 +6,17 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] - 2026-07-22
+
+### Added
+
+- Paperless-ngx as an additional, one-way export destination for storage targets: documents already stored are additionally uploaded to a Paperless-ngx instance, with an optional setting to delete the copy at the original storage target once the export succeeds. Paperless-ngx can never itself become the default storage target.
+
+### Fixed
+
+- The "Unsafe: unencrypted FTP …" warning didn't follow the live-selected connection type in the form and stayed visible after switching to FTPS
+- The password manager's save popup appeared unwantedly on the storage-target and add-account forms
+
 ## [1.0.2] - 2026-07-22
 
 ### Changed

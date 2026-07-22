@@ -6,6 +6,17 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier dokumentiert.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 das Projekt an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.0.3] - 2026-07-22
+
+### Hinzugefügt
+
+- Paperless-ngx als zusätzliches, einseitiges Exportziel für Speicherziele: bereits gespeicherte Rechnungen werden zusätzlich zu einer Paperless-ngx-Instanz hochgeladen, mit optionalem automatischem Löschen am ursprünglichen Speicherziel nach erfolgreichem Export. Paperless-ngx kann nie selbst zum Standard-Speicherziel werden.
+
+### Behoben
+
+- Die Warnung „Unsicher: Unverschlüsseltes FTP …" folgte nicht der im Formular live gewählten Verbindungsart und blieb sichtbar, wenn auf FTPS gewechselt wurde
+- Das Speichern-Popup des Passwortmanagers erschien unerwünscht im Speicherziel- und im Konto-hinzufügen-Formular
+
 ## [1.0.2] - 2026-07-22
 
 ### Geändert
